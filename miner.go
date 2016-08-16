@@ -9,8 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/mumax/3/cuda/cu"
-
 	"github.com/decred/gominer/stratum"
 	"github.com/decred/gominer/work"
 )
@@ -46,12 +44,9 @@ func NewMiner() (*Miner, error) {
 	}
 
 	if cfg.UseCuda {
-		cu.Init(0)
-		ids := cu.DeviceGetCount()
-		minrLog.Infof("%v GPUs", ids)
-		for i := 0; i < ids; i++ {
-			dev := cu.DeviceGet(i)
-			minrLog.Infof("%v: %v", i, dev.Name())
+		_, err := getCUDeviceIDs()
+		if err != nil {
+			return nil, err
 		}
 	} else {
 		platformID, deviceIDs, err := getCLDeviceIDs()
