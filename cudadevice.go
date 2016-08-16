@@ -12,6 +12,7 @@ import (
 
 func getCUInfo() (int, error) {
 	cu.Init(0)
+	// XXX check cudaDriverGetVersion?
 	ids := cu.DeviceGetCount()
 	minrLog.Infof("%v GPUs", ids)
 	for i := 0; i < ids; i++ {
@@ -19,6 +20,7 @@ func getCUInfo() (int, error) {
 		minrLog.Infof("%v: %v", i, dev.Name())
 		ctx := cu.CtxCreate(cu.CTX_SCHED_AUTO, dev)
 		cu.CtxSetCurrent(ctx)
+		// XXX check cudaGetDeviceProperties?
 	}
 	return ids, nil
 }
@@ -27,9 +29,9 @@ type CUDevice struct {
 	sync.Mutex
 	index        int
 	platformID   cl.CL_platform_id
-	deviceID     cl.CL_device_id
+	deviceID     cu.Device
 	deviceName   string
-	context      cl.CL_context
+	context      cu.Context
 	queue        cl.CL_command_queue
 	outputBuffer cl.CL_mem
 	program      cl.CL_program
