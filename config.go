@@ -73,7 +73,7 @@ type config struct {
 	SimNet        bool `long:"simnet" description:"Connect to the simulation test network"`
 	TLSSkipVerify bool `long:"skipverify" description:"Do not verify tls certificates (not recommended!)"`
 
-	UseCuda       bool   `short:"U" long"cuda" description:"Use CUDA if GPU supports it"`
+	UseCuda       bool   `short:"U" long:"cuda" description:"Use CUDA if GPU supports it"`
 	Autocalibrate int    `short:"A" long:"autocalibrate" description:"Use GPU autocalibration to achieve a kernel execution timing of the passed number of milliseconds"`
 	Devices       string `short:"D" long:"devices" description:"Single device ID or a comma separated list of device IDs to use."`
 	DeviceIDs     []int
