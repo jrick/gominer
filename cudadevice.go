@@ -17,6 +17,8 @@ func getCUInfo() (int, error) {
 	for i := 0; i < ids; i++ {
 		dev := cu.DeviceGet(i)
 		minrLog.Infof("%v: %v", i, dev.Name())
+		ctx := cu.CtxCreate(cu.CTX_SCHED_AUTO, dev)
+		cu.CtxSetCurrent(ctx)
 	}
 	return ids, nil
 }
