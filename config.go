@@ -23,6 +23,7 @@ const (
 	defaultLogDirname     = "logs"
 	defaultLogFilename    = "gominer.log"
 	defaultClKernel       = "blake256.cl"
+	defaultCuKernel       = "decred.cu"
 )
 
 var (
@@ -51,6 +52,7 @@ type config struct {
 	LogDir     string `long:"logdir" description:"Directory to log output."`
 	DebugLevel string `short:"d" long:"debuglevel" description:"Logging level for all subsystems {trace, debug, info, warn, error, critical} -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems -- Use show to list available subsystems"`
 	ClKernel   string `short:"k" long:"kernel" description:"File with cl kernel to use"`
+	CuKernel   string `short:"l" long:"cukernel" description:"File with cu kernel to use"`
 
 	// Debugging options
 	Profile    string `long:"profile" description:"Enable HTTP profiling on given port -- NOTE port must be between 1024 and 65536"`
@@ -239,6 +241,7 @@ func loadConfig() (*config, []string, error) {
 		Autocalibrate: defaultAutocalibrate,
 		Intensity:     defaultIntensity,
 		ClKernel:      defaultClKernel,
+		CuKernel:      defaultCuKernel,
 		WorkSize:      defaultWorkSize,
 	}
 
