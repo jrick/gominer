@@ -36,7 +36,7 @@ var chainParams = &chaincfg.MainNetParams
 
 var zeroSlice = []cl.CL_uint{cl.CL_uint(0)}
 
-func getCLDeviceIDs() (cl.CL_platform_id, []cl.CL_device_id, error) {
+func getCLInfo() (cl.CL_platform_id, []cl.CL_device_id, error) {
 	var platformID cl.CL_platform_id
 	platformIDs, err := getCLPlatforms()
 	if err != nil {
@@ -47,28 +47,7 @@ func getCLDeviceIDs() (cl.CL_platform_id, []cl.CL_device_id, error) {
 	if err != nil {
 		return platformID, nil, fmt.Errorf("Could not get CL devices for platform: %v", err)
 	}
-
-	var deviceIDs []cl.CL_device_id
-
-	// Enforce device restrictions if they exist
-	if len(cfg.DeviceIDs) > 0 {
-		for _, i := range cfg.DeviceIDs {
-			var found = false
-			for j, CLdeviceID := range CLdeviceIDs {
-				if i == j {
-					deviceIDs = append(deviceIDs, CLdeviceID)
-					found = true
-				}
-			}
-			if !found {
-				return platformID, nil, fmt.Errorf("Unable to find GPU #%d", i)
-			}
-		}
-	} else {
-		deviceIDs = CLdeviceIDs
-	}
-
-	return platformID, deviceIDs, nil
+	return platformID, CLdeviceIDs, nil
 }
 
 func getCLPlatforms() ([]cl.CL_platform_id, error) {

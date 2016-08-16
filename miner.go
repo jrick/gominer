@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/decred/gominer/cl"
 	"github.com/decred/gominer/stratum"
 	"github.com/decred/gominer/work"
 )
@@ -49,12 +50,31 @@ func NewMiner() (*Miner, error) {
 			return nil, err
 		}
 	} else {
-		platformID, deviceIDs, err := getCLDeviceIDs()
+		platformID, CLdeviceIDs, err := getCLInfo()
 		if err != nil {
 			return nil, err
 		}
-		// this line is just to compile for now.
-		CLdeviceIDs := deviceIDs
+
+		var deviceIDs []cl.CL_device_id
+
+		// Enforce device restrictions if they exist
+		if len(cfg.DeviceIDs) > 0 {
+			for _, i := range cfg.DeviceIDs {
+				var found = false
+				for j, CLdeviceID := range CLdeviceIDs {
+					if i == j {
+						deviceIDs = append(deviceIDs, CLdeviceID)
+						found = true
+					}
+				}
+				if !found {
+					return nil, fmt.Errorf("Unable to find GPU #%d", i)
+				}
+			}
+		} else {
+			deviceIDs = CLdeviceIDs
+		}
+
 		// Check the number of intensities/work sizes versus the number of devices.
 		userSetWorkSize := true
 		if reflect.DeepEqual(cfg.Intensity, defaultIntensity) &&
