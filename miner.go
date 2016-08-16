@@ -11,7 +11,6 @@ import (
 
 	"github.com/mumax/3/cuda/cu"
 
-	"github.com/decred/gominer/cl"
 	"github.com/decred/gominer/stratum"
 	"github.com/decred/gominer/work"
 )
@@ -55,36 +54,12 @@ func NewMiner() (*Miner, error) {
 			minrLog.Infof("%v: %v", i, dev.Name())
 		}
 	} else {
-		platformIDs, err := getCLPlatforms()
+		platformID, deviceIDs, err := getCLDeviceIDs()
 		if err != nil {
-			return nil, fmt.Errorf("Could not get CL platforms: %v", err)
+			return nil, err
 		}
-		platformID := platformIDs[0]
-		CLdeviceIDs, err := getCLDevices(platformID)
-		if err != nil {
-			return nil, fmt.Errorf("Could not get CL devices for platform: %v", err)
-		}
-
-		var deviceIDs []cl.CL_device_id
-
-		// Enforce device restrictions if they exist
-		if len(cfg.DeviceIDs) > 0 {
-			for _, i := range cfg.DeviceIDs {
-				var found = false
-				for j, CLdeviceID := range CLdeviceIDs {
-					if i == j {
-						deviceIDs = append(deviceIDs, CLdeviceID)
-						found = true
-					}
-				}
-				if !found {
-					return nil, fmt.Errorf("Unable to find GPU #%d", i)
-				}
-			}
-		} else {
-			deviceIDs = CLdeviceIDs
-		}
-
+		// this line is just to compile for now.
+		CLdeviceIDs := deviceIDs
 		// Check the number of intensities/work sizes versus the number of devices.
 		userSetWorkSize := true
 		if reflect.DeepEqual(cfg.Intensity, defaultIntensity) &&
