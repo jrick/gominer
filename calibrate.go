@@ -12,7 +12,7 @@ import (
 )
 
 // getKernelExecutionTime returns the kernel execution time for a device.
-func (d *Device) getKernelExecutionTime(globalWorksize uint32) (time.Duration,
+func (d *ClDevice) getKernelExecutionTime(globalWorksize uint32) (time.Duration,
 	error) {
 	d.work = work.Work{}
 
@@ -93,7 +93,7 @@ func (d *Device) getKernelExecutionTime(globalWorksize uint32) (time.Duration,
 
 // calcWorkSizeForMilliseconds calculates the correct worksize to achieve
 // a GPU execution cycle of the passed duration in milliseconds.
-func (d *Device) calcWorkSizeForMilliseconds(ms int) (uint32, error) {
+func (d *ClDevice) calcWorkSizeForMilliseconds(ms int) (uint32, error) {
 	workSize := uint32(1 << 10)
 	timeToAchieve := time.Duration(ms) * time.Millisecond
 	for {

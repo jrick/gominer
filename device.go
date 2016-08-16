@@ -109,7 +109,7 @@ func loadProgramSource(filename string) ([][]byte, []cl.CL_size_t, error) {
 	return program_buffer[:], program_size[:], nil
 }
 
-type Device struct {
+type ClDevice struct {
 	sync.Mutex
 	index        int
 	platformID   cl.CL_platform_id
@@ -176,9 +176,9 @@ func ListDevices() {
 	}
 }
 
-func NewDevice(index int, platformID cl.CL_platform_id, deviceID cl.CL_device_id,
-	workDone chan []byte) (*Device, error) {
-	d := &Device{
+func NewClDevice(index int, platformID cl.CL_platform_id, deviceID cl.CL_device_id,
+	workDone chan []byte) (*ClDevice, error) {
+	d := &ClDevice{
 		index:      index,
 		platformID: platformID,
 		deviceID:   deviceID,
@@ -295,7 +295,7 @@ func NewDevice(index int, platformID cl.CL_platform_id, deviceID cl.CL_device_id
 	return d, nil
 }
 
-func (d *Device) Release() {
+func (d *ClDevice) Release() {
 	cl.CLReleaseKernel(d.kernel)
 	cl.CLReleaseProgram(d.program)
 	cl.CLReleaseCommandQueue(d.queue)
@@ -303,7 +303,7 @@ func (d *Device) Release() {
 	cl.CLReleaseContext(d.context)
 }
 
-func (d *Device) updateCurrentWork() {
+func (d *ClDevice) updateCurrentWork() {
 	var w *work.Work
 	if d.hasWork {
 		// If we already have work, we just need to check if there's new one
@@ -350,7 +350,7 @@ func (d *Device) updateCurrentWork() {
 		hex.EncodeToString(d.work.Data[:]))
 }
 
-func (d *Device) Run() {
+func (d *ClDevice) Run() {
 	//d.testFoundCandidate()
 	//return
 
@@ -361,7 +361,7 @@ func (d *Device) Run() {
 }
 
 // testFoundCandidate has some hardcoded data to match up with sgminer.
-func (d *Device) testFoundCandidate() {
+func (d *ClDevice) testFoundCandidate() {
 	n1 := uint32(33554432)
 	n0 := uint32(7245027)
 
@@ -393,7 +393,7 @@ func (d *Device) testFoundCandidate() {
 	//stratum submit {"params": ["test", "76df", "0200000000a461f2e3014335", "5783c78e", "e38c6e00"], "id": 4, "method": "mining.submit"}
 }
 
-func (d *Device) runDevice() error {
+func (d *ClDevice) runDevice() error {
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
 	outputData := make([]uint32, outputBufferSize)
 
@@ -509,7 +509,7 @@ func (d *Device) runDevice() error {
 	}
 }
 
-func (d *Device) foundCandidate(ts, nonce0, nonce1 uint32) {
+func (d *ClDevice) foundCandidate(ts, nonce0, nonce1 uint32) {
 	d.Lock()
 	defer d.Unlock()
 	// Construct the final block header.
@@ -547,11 +547,11 @@ func (d *Device) foundCandidate(ts, nonce0, nonce1 uint32) {
 	}
 }
 
-func (d *Device) Stop() {
+func (d *ClDevice) Stop() {
 	close(d.quit)
 }
 
-func (d *Device) SetWork(w *work.Work) {
+func (d *ClDevice) SetWork(w *work.Work) {
 	d.newWork <- w
 }
 
@@ -579,7 +579,7 @@ func getDeviceInfo(id cl.CL_device_id,
 	return strinfo
 }
 
-func (d *Device) PrintStats() {
+func (d *ClDevice) PrintStats() {
 	secondsElapsed := uint32(time.Now().Unix()) - d.started
 	if secondsElapsed == 0 {
 		return
