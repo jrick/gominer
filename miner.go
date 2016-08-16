@@ -50,6 +50,10 @@ func NewMiner() (*Miner, error) {
 		cu.Init(0)
 		ids := cu.DeviceGetCount()
 		minrLog.Infof("%v GPUs", ids)
+		for i := 0; i < ids; i++ {
+			dev := cu.DeviceGet(i)
+			minrLog.Infof("%v: %v", i, dev.Name())
+		}
 	} else {
 		platformIDs, err := getCLPlatforms()
 		if err != nil {
