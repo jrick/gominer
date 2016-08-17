@@ -54,6 +54,9 @@ func NewMiner() (*Miner, error) {
 
 		var deviceIDs []cu.Device
 
+		// XXX Can probably combine these bits with the opencl ones once
+		// I decide what to do about the types.
+
 		// Enforce device restrictions if they exist
 		if len(cfg.DeviceIDs) > 0 {
 			for _, i := range cfg.DeviceIDs {
@@ -70,6 +73,28 @@ func NewMiner() (*Miner, error) {
 			}
 		} else {
 			deviceIDs = CUdeviceIDs
+		}
+
+		// Check the number of intensities/work sizes versus the number of devices.
+		userSetWorkSize := true
+		if reflect.DeepEqual(cfg.Intensity, defaultIntensity) &&
+			reflect.DeepEqual(cfg.WorkSize, defaultWorkSize) {
+			userSetWorkSize = false
+		}
+		if userSetWorkSize {
+			if reflect.DeepEqual(cfg.WorkSize, defaultWorkSize) {
+				if len(cfg.Intensity) != len(deviceIDs) {
+					return nil, fmt.Errorf("Intensities supplied, but number supplied "+
+						"did not match the number of GPUs (got %v, want %v)",
+						len(cfg.Intensity), len(deviceIDs))
+				}
+			} else {
+				if len(cfg.WorkSize) != len(deviceIDs) {
+					return nil, fmt.Errorf("WorkSize supplied, but number supplied "+
+						"did not match the number of GPUs (got %v, want %v)",
+						len(cfg.WorkSize), len(deviceIDs))
+				}
+			}
 		}
 
 	} else {
