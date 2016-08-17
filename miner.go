@@ -18,6 +18,7 @@ import (
 
 type Miner struct {
 	devices          []*ClDevice
+	cudevices        []*CuDevice
 	workDone         chan []byte
 	quit             chan struct{}
 	needsWorkRefresh chan struct{}

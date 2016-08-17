@@ -28,7 +28,7 @@ func getCUInfo() ([]cu.Device, error) {
 	return CUdevices, nil
 }
 
-type CUDevice struct {
+type CuDevice struct {
 	sync.Mutex
 	index        int
 	platformID   cl.CL_platform_id
