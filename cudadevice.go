@@ -15,14 +15,16 @@ func getCUInfo() ([]cu.Device, error) {
 	// XXX check cudaDriverGetVersion?
 	ids := cu.DeviceGetCount()
 	minrLog.Infof("%v GPUs", ids)
+	var CUdevices []cu.Device
 	for i := 0; i < ids; i++ {
 		dev := cu.DeviceGet(i)
-		minrLog.Infof("%v: %v", i, dev.Name())
 		ctx := cu.CtxCreate(cu.CTX_SCHED_AUTO, dev)
 		cu.CtxSetCurrent(ctx)
+		CUdevices = append(CUdevices, dev)
+		minrLog.Infof("%v: %v", i, dev.Name())
 		// XXX check cudaGetDeviceProperties?
 	}
-	return nil, nil
+	return CUdevices, nil
 }
 
 type CUDevice struct {
