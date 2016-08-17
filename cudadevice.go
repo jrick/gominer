@@ -10,7 +10,7 @@ import (
 	"github.com/mumax/3/cuda/cu"
 )
 
-func getCUInfo() (int, error) {
+func getCUInfo() ([]cu.Device, error) {
 	cu.Init(0)
 	// XXX check cudaDriverGetVersion?
 	ids := cu.DeviceGetCount()
@@ -22,7 +22,7 @@ func getCUInfo() (int, error) {
 		cu.CtxSetCurrent(ctx)
 		// XXX check cudaGetDeviceProperties?
 	}
-	return ids, nil
+	return nil, nil
 }
 
 type CUDevice struct {
