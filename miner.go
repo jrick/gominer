@@ -298,6 +298,19 @@ func (m *Miner) workRefreshThread() {
 	}
 }
 
+func (d *CuDevice) Run() {
+	err := d.runDevice()
+	if err != nil {
+		minrLog.Errorf("Error on device: %v", err)
+	}
+}
+
+func (d *ClDevice) runDevice() error {
+	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
+
+	return nil
+}
+
 func (m *Miner) printStatsThread() {
 	defer m.wg.Done()
 
