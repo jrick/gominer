@@ -9,6 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/mumax/3/cuda/cu"
+
 	"github.com/decred/gominer/cl"
 	"github.com/decred/gominer/stratum"
 	"github.com/decred/gominer/work"
@@ -45,10 +47,31 @@ func NewMiner() (*Miner, error) {
 	}
 
 	if cfg.UseCuda {
-		_, err := getCUInfo()
+		CUdeviceIDs, err := getCUInfo()
 		if err != nil {
 			return nil, err
 		}
+
+		var deviceIDs []cu.Device
+
+		// Enforce device restrictions if they exist
+		if len(cfg.DeviceIDs) > 0 {
+			for _, i := range cfg.DeviceIDs {
+				var found = false
+				for j, CUdeviceID := range CUdeviceIDs {
+					if i == j {
+						deviceIDs = append(deviceIDs, CUdeviceID)
+						found = true
+					}
+				}
+				if !found {
+					return nil, fmt.Errorf("Unable to find GPU #%d", i)
+				}
+			}
+		} else {
+			deviceIDs = CUdeviceIDs
+		}
+
 	} else {
 		platformID, CLdeviceIDs, err := getCLInfo()
 		if err != nil {

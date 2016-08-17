@@ -5,9 +5,10 @@ package main
 import (
 	"sync"
 
+	"github.com/mumax/3/cuda/cu"
+
 	"github.com/decred/gominer/cl"
 	"github.com/decred/gominer/work"
-	"github.com/mumax/3/cuda/cu"
 )
 
 func getCUInfo() ([]cu.Device, error) {
