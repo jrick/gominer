@@ -97,7 +97,22 @@ func NewMiner() (*Miner, error) {
 				}
 			}
 		}
+		m.devices = make([]*ClDevice, len(deviceIDs))
+		for i, deviceID := range deviceIDs {
+			// Use the real device order so i.e. -D 1 doesn't print GPU #0
+			realnum := i
+			for iCL, CLdeviceID := range CLdeviceIDs {
+				if CLdeviceID == deviceID {
+					realnum = iCL
+				}
+			}
 
+			var err error
+			m.devices[i], err = NewClDevice(realnum, platformID, deviceID, m.workDone)
+			if err != nil {
+				return nil, err
+			}
+		}
 	} else {
 		platformID, CLdeviceIDs, err := getCLInfo()
 		if err != nil {

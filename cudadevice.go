@@ -65,3 +65,11 @@ type CuDevice struct {
 
 	quit chan struct{}
 }
+
+func (d *CuDevice) Stop() {
+	close(d.quit)
+}
+
+func (d *CuDevice) SetWork(w *work.Work) {
+	d.newWork <- w
+}
