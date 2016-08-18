@@ -112,21 +112,6 @@ func NewMiner() (*Miner, error) {
 				return nil, err
 			}
 		}
-		// for i, deviceID := range deviceIDs {
-		// 	// Use the real device order so i.e. -D 1 doesn't print GPU #0
-		// 	realnum := i
-		// 	for iCU, CUdeviceID := range CUdeviceIDs {
-		// 		if CUdeviceID == deviceID {
-		// 			realnum = iCU
-		// 		}
-		// 	}
-
-		// 	var err error
-		// 	m.devices[i], err = NewDevice(realnum, platformID, deviceID, m.workDone)
-		// 	if err != nil {
-		// 		return nil, err
-		// 	}
-		// }
 	} else {
 		platformID, CLdeviceIDs, err := getCLInfo()
 		if err != nil {
