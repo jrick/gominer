@@ -4,6 +4,8 @@ package main
 
 import (
 	"github.com/mumax/3/cuda/cu"
+
+	"github.com/decred/gominer/work"
 )
 
 func getCUInfo() ([]cu.Device, error) {
@@ -21,4 +23,24 @@ func getCUInfo() ([]cu.Device, error) {
 		// XXX check cudaGetDeviceProperties?
 	}
 	return CUdevices, nil
+}
+
+func NewCuDevice(index int, deviceID cu.Device,
+	workDone chan []byte) (*Device, error) {
+
+	d := &Device{
+		index: index,
+		//platformID: platformID,
+		//deviceID:   deviceID,
+		//deviceName: getDeviceInfo(deviceID, cl.CL_DEVICE_NAME, "CL_DEVICE_NAME"),
+		cuda:     true,
+		quit:     make(chan struct{}),
+		newWork:  make(chan *work.Work, 5),
+		workDone: workDone,
+	}
+
+	// Create tue CU context
+
+	return d, nil
+
 }
