@@ -3,12 +3,7 @@
 package main
 
 import (
-	"sync"
-
 	"github.com/mumax/3/cuda/cu"
-
-	"github.com/decred/gominer/cl"
-	"github.com/decred/gominer/work"
 )
 
 func getCUInfo() ([]cu.Device, error) {
@@ -26,50 +21,4 @@ func getCUInfo() ([]cu.Device, error) {
 		// XXX check cudaGetDeviceProperties?
 	}
 	return CUdevices, nil
-}
-
-type CuDevice struct {
-	sync.Mutex
-	index        int
-	platformID   cl.CL_platform_id
-	deviceID     cu.Device
-	deviceName   string
-	context      cu.Context
-	queue        cl.CL_command_queue
-	outputBuffer cl.CL_mem
-	program      cl.CL_program
-	kernel       cl.CL_kernel
-
-	workSize uint32
-
-	// extraNonce is the device extraNonce, where the first
-	// byte is the device ID (supporting up to 255 devices)
-	// while the last 3 bytes is the extraNonce value. If
-	// the extraNonce goes through all 0x??FFFFFF values,
-	// it will reset to 0x??000000.
-	extraNonce    uint32
-	currentWorkID uint32
-
-	midstate  [8]uint32
-	lastBlock [16]uint32
-
-	work     work.Work
-	newWork  chan *work.Work
-	workDone chan []byte
-	hasWork  bool
-
-	started          uint32
-	allDiffOneShares uint64
-	validShares      uint64
-	invalidShares    uint64
-
-	quit chan struct{}
-}
-
-func (d *CuDevice) Stop() {
-	close(d.quit)
-}
-
-func (d *CuDevice) SetWork(w *work.Work) {
-	d.newWork <- w
 }

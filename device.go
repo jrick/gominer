@@ -16,6 +16,8 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/mumax/3/cuda/cu"
+
 	"github.com/decred/dcrd/blockchain"
 	"github.com/decred/dcrd/chaincfg"
 	"github.com/decred/dcrd/chaincfg/chainhash"
@@ -35,51 +37,6 @@ const (
 var chainParams = &chaincfg.MainNetParams
 
 var zeroSlice = []cl.CL_uint{cl.CL_uint(0)}
-
-func getCLInfo() (cl.CL_platform_id, []cl.CL_device_id, error) {
-	var platformID cl.CL_platform_id
-	platformIDs, err := getCLPlatforms()
-	if err != nil {
-		return platformID, nil, fmt.Errorf("Could not get CL platforms: %v", err)
-	}
-	platformID = platformIDs[0]
-	CLdeviceIDs, err := getCLDevices(platformID)
-	if err != nil {
-		return platformID, nil, fmt.Errorf("Could not get CL devices for platform: %v", err)
-	}
-	return platformID, CLdeviceIDs, nil
-}
-
-func getCLPlatforms() ([]cl.CL_platform_id, error) {
-	var numPlatforms cl.CL_uint
-	status := cl.CLGetPlatformIDs(0, nil, &numPlatforms)
-	if status != cl.CL_SUCCESS {
-		return nil, clError(status, "CLGetPlatformIDs")
-	}
-	platforms := make([]cl.CL_platform_id, numPlatforms)
-	status = cl.CLGetPlatformIDs(numPlatforms, platforms, nil)
-	if status != cl.CL_SUCCESS {
-		return nil, clError(status, "CLGetPlatformIDs")
-	}
-	return platforms, nil
-}
-
-// getCLDevices returns the list of devices for the given platform.
-func getCLDevices(platform cl.CL_platform_id) ([]cl.CL_device_id, error) {
-	var numDevices cl.CL_uint
-	status := cl.CLGetDeviceIDs(platform, cl.CL_DEVICE_TYPE_GPU, 0, nil,
-		&numDevices)
-	if status != cl.CL_SUCCESS {
-		return nil, clError(status, "CLGetDeviceIDs")
-	}
-	devices := make([]cl.CL_device_id, numDevices)
-	status = cl.CLGetDeviceIDs(platform, cl.CL_DEVICE_TYPE_ALL, numDevices,
-		devices, nil)
-	if status != cl.CL_SUCCESS {
-		return nil, clError(status, "CLGetDeviceIDs")
-	}
-	return devices, nil
-}
 
 func loadProgramSource(filename string) ([][]byte, []cl.CL_size_t, error) {
 	var program_buffer [1][]byte
@@ -109,9 +66,11 @@ func loadProgramSource(filename string) ([][]byte, []cl.CL_size_t, error) {
 	return program_buffer[:], program_size[:], nil
 }
 
-type ClDevice struct {
+type Device struct {
 	sync.Mutex
-	index        int
+	index int
+
+	// Items for OpenCL device
 	platformID   cl.CL_platform_id
 	deviceID     cl.CL_device_id
 	deviceName   string
@@ -120,6 +79,10 @@ type ClDevice struct {
 	outputBuffer cl.CL_mem
 	program      cl.CL_program
 	kernel       cl.CL_kernel
+
+	// Items for CUDA device
+	cuDeviceID cu.Device
+	cuContext  cu.Context
 
 	workSize uint32
 
@@ -176,9 +139,9 @@ func ListDevices() {
 	}
 }
 
-func NewClDevice(index int, platformID cl.CL_platform_id, deviceID cl.CL_device_id,
-	workDone chan []byte) (*ClDevice, error) {
-	d := &ClDevice{
+func NewDevice(index int, platformID cl.CL_platform_id, deviceID cl.CL_device_id,
+	workDone chan []byte) (*Device, error) {
+	d := &Device{
 		index:      index,
 		platformID: platformID,
 		deviceID:   deviceID,
@@ -295,7 +258,7 @@ func NewClDevice(index int, platformID cl.CL_platform_id, deviceID cl.CL_device_
 	return d, nil
 }
 
-func (d *ClDevice) Release() {
+func (d *Device) Release() {
 	cl.CLReleaseKernel(d.kernel)
 	cl.CLReleaseProgram(d.program)
 	cl.CLReleaseCommandQueue(d.queue)
@@ -303,7 +266,7 @@ func (d *ClDevice) Release() {
 	cl.CLReleaseContext(d.context)
 }
 
-func (d *ClDevice) updateCurrentWork() {
+func (d *Device) updateCurrentWork() {
 	var w *work.Work
 	if d.hasWork {
 		// If we already have work, we just need to check if there's new one
@@ -350,7 +313,7 @@ func (d *ClDevice) updateCurrentWork() {
 		hex.EncodeToString(d.work.Data[:]))
 }
 
-func (d *ClDevice) Run() {
+func (d *Device) Run() {
 	err := d.runDevice()
 	if err != nil {
 		minrLog.Errorf("Error on device: %v", err)
@@ -358,7 +321,7 @@ func (d *ClDevice) Run() {
 }
 
 // testFoundCandidate has some hardcoded data to match up with sgminer.
-func (d *ClDevice) testFoundCandidate() {
+func (d *Device) testFoundCandidate() {
 	n1 := uint32(33554432)
 	n0 := uint32(7245027)
 
@@ -390,7 +353,7 @@ func (d *ClDevice) testFoundCandidate() {
 	//stratum submit {"params": ["test", "76df", "0200000000a461f2e3014335", "5783c78e", "e38c6e00"], "id": 4, "method": "mining.submit"}
 }
 
-func (d *ClDevice) runDevice() error {
+func (d *Device) runDevice() error {
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
 	outputData := make([]uint32, outputBufferSize)
 
@@ -506,7 +469,7 @@ func (d *ClDevice) runDevice() error {
 	}
 }
 
-func (d *ClDevice) foundCandidate(ts, nonce0, nonce1 uint32) {
+func (d *Device) foundCandidate(ts, nonce0, nonce1 uint32) {
 	d.Lock()
 	defer d.Unlock()
 	// Construct the final block header.
@@ -544,11 +507,11 @@ func (d *ClDevice) foundCandidate(ts, nonce0, nonce1 uint32) {
 	}
 }
 
-func (d *ClDevice) Stop() {
+func (d *Device) Stop() {
 	close(d.quit)
 }
 
-func (d *ClDevice) SetWork(w *work.Work) {
+func (d *Device) SetWork(w *work.Work) {
 	d.newWork <- w
 }
 
@@ -576,7 +539,7 @@ func getDeviceInfo(id cl.CL_device_id,
 	return strinfo
 }
 
-func (d *ClDevice) PrintStats() {
+func (d *Device) PrintStats() {
 	secondsElapsed := uint32(time.Now().Unix()) - d.started
 	if secondsElapsed == 0 {
 		return

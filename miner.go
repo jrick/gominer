@@ -17,8 +17,7 @@ import (
 )
 
 type Miner struct {
-	devices          []*ClDevice
-	cudevices        []*CuDevice
+	devices          []*Device
 	workDone         chan []byte
 	quit             chan struct{}
 	needsWorkRefresh chan struct{}
@@ -97,22 +96,22 @@ func NewMiner() (*Miner, error) {
 				}
 			}
 		}
-		m.devices = make([]*ClDevice, len(deviceIDs))
-		for i, deviceID := range deviceIDs {
-			// Use the real device order so i.e. -D 1 doesn't print GPU #0
-			realnum := i
-			for iCL, CLdeviceID := range CLdeviceIDs {
-				if CLdeviceID == deviceID {
-					realnum = iCL
-				}
-			}
+		m.devices = make([]*Device, len(deviceIDs))
+		// for i, deviceID := range deviceIDs {
+		// 	// Use the real device order so i.e. -D 1 doesn't print GPU #0
+		// 	realnum := i
+		// 	for iCU, CUdeviceID := range CUdeviceIDs {
+		// 		if CUdeviceID == deviceID {
+		// 			realnum = iCU
+		// 		}
+		// 	}
 
-			var err error
-			m.devices[i], err = NewClDevice(realnum, platformID, deviceID, m.workDone)
-			if err != nil {
-				return nil, err
-			}
-		}
+		// 	var err error
+		// 	m.devices[i], err = NewDevice(realnum, platformID, deviceID, m.workDone)
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// }
 	} else {
 		platformID, CLdeviceIDs, err := getCLInfo()
 		if err != nil {
@@ -161,7 +160,7 @@ func NewMiner() (*Miner, error) {
 			}
 		}
 
-		m.devices = make([]*ClDevice, len(deviceIDs))
+		m.devices = make([]*Device, len(deviceIDs))
 		for i, deviceID := range deviceIDs {
 			// Use the real device order so i.e. -D 1 doesn't print GPU #0
 			realnum := i
@@ -172,7 +171,7 @@ func NewMiner() (*Miner, error) {
 			}
 
 			var err error
-			m.devices[i], err = NewClDevice(realnum, platformID, deviceID, m.workDone)
+			m.devices[i], err = NewDevice(realnum, platformID, deviceID, m.workDone)
 			if err != nil {
 				return nil, err
 			}
@@ -296,19 +295,6 @@ func (m *Miner) workRefreshThread() {
 		case <-m.needsWorkRefresh:
 		}
 	}
-}
-
-func (d *CuDevice) Run() {
-	err := d.runDevice()
-	if err != nil {
-		minrLog.Errorf("Error on device: %v", err)
-	}
-}
-
-func (d *ClDevice) runDevice() error {
-	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
-
-	return nil
 }
 
 func (m *Miner) printStatsThread() {
