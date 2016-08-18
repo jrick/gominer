@@ -97,6 +97,21 @@ func NewMiner() (*Miner, error) {
 			}
 		}
 		m.devices = make([]*Device, len(deviceIDs))
+		for i, deviceID := range deviceIDs {
+			// Use the real device order so i.e. -D 1 doesn't print GPU #0
+			realnum := i
+			for iCU, CUdeviceID := range CUdeviceIDs {
+				if CUdeviceID == deviceID {
+					realnum = iCU
+				}
+			}
+
+			var err error
+			m.devices[i], err = NewCuDevice(realnum, deviceID, m.workDone)
+			if err != nil {
+				return nil, err
+			}
+		}
 		// for i, deviceID := range deviceIDs {
 		// 	// Use the real device order so i.e. -D 1 doesn't print GPU #0
 		// 	realnum := i
