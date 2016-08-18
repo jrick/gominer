@@ -16,6 +16,7 @@ func getCUInfo() ([]cu.Device, error) {
 	ids := cu.DeviceGetCount()
 	minrLog.Infof("%v GPUs", ids)
 	var CUdevices []cu.Device
+	// XXX Do this more like ListCuDevices
 	for i := 0; i < ids; i++ {
 		dev := cu.DeviceGet(i)
 		ctx := cu.CtxCreate(cu.CTX_SCHED_AUTO, dev)
@@ -56,17 +57,17 @@ func NewCuDevice(index int, deviceID cu.Device,
 	workDone chan []byte) (*Device, error) {
 
 	d := &Device{
-		index: index,
-		//platformID: platformID,
-		//deviceID:   deviceID,
-		//deviceName: getDeviceInfo(deviceID, cl.CL_DEVICE_NAME, "CL_DEVICE_NAME"),
-		cuda:     true,
-		quit:     make(chan struct{}),
-		newWork:  make(chan *work.Work, 5),
-		workDone: workDone,
+		index:      index,
+		cuDeviceID: deviceID,
+		deviceName: deviceID.Name(),
+		cuda:       true,
+		quit:       make(chan struct{}),
+		newWork:    make(chan *work.Work, 5),
+		workDone:   workDone,
 	}
 
 	// Create tue CU context
+	d.cuContext = cu.CtxCreate(cu.CTX_SCHED_AUTO, deviceID)
 
 	return d, nil
 
