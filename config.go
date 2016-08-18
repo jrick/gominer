@@ -44,8 +44,9 @@ var (
 )
 
 type config struct {
-	ListDevices bool `short:"l" long:"listdevices" description:"List number of devices."`
-	ShowVersion bool `short:"V" long:"version" description:"Display version information and exit"`
+	ListDevices   bool `short:"l" long:"listdevices" description:"List number of devices."`
+	ListCuDevices bool `long:"listcudadevices" description:"List number of CUDA devices."`
+	ShowVersion   bool `short:"V" long:"version" description:"Display version information and exit"`
 
 	// Config / log options
 	ConfigFile string `short:"C" long:"configfile" description:"Path to configuration file"`
@@ -271,6 +272,11 @@ func loadConfig() (*config, []string, error) {
 	usageMessage := fmt.Sprintf("Use %s -h to show usage", appName)
 	if preCfg.ListDevices {
 		ListDevices()
+		os.Exit(0)
+	}
+
+	if preCfg.ListCuDevices {
+		ListCuDevices()
 		os.Exit(0)
 	}
 

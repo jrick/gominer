@@ -3,6 +3,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/mumax/3/cuda/cu"
 
 	"github.com/decred/gominer/work"
@@ -23,6 +25,31 @@ func getCUInfo() ([]cu.Device, error) {
 		// XXX check cudaGetDeviceProperties?
 	}
 	return CUdevices, nil
+}
+
+// getCUDevices returns the list of devices for the given platform.
+func getCUDevices() ([]cu.Device, error) {
+	cu.Init(0)
+	var numDevices int
+	numDevices = cu.DeviceGetCount()
+	if numDevices < 1 {
+		return nil, fmt.Errorf("No devices found")
+	}
+	devices := make([]cu.Device, numDevices)
+	for i := 0; i < numDevices; i++ {
+		dev := cu.DeviceGet(i)
+		devices[i] = dev
+	}
+	return devices, nil
+}
+
+// ListCuDevices prints a list of CUDA capable GPUs present.
+func ListCuDevices() {
+	// CUDA devices
+	devices, _ := getCUDevices()
+	for i, dev := range devices {
+		fmt.Printf("CUDA Capbale GPU #%d: %s\n", i, dev.Name())
+	}
 }
 
 func NewCuDevice(index int, deviceID cu.Device,
