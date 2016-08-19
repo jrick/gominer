@@ -119,8 +119,8 @@ func clError(status cl.CL_int, f string) error {
 }
 
 func (d *Device) Release() {
-	if d.cuda {
-	} else {
+	// No cuda equivalents to these.
+	if !d.cuda {
 		cl.CLReleaseKernel(d.kernel)
 		cl.CLReleaseProgram(d.program)
 		cl.CLReleaseCommandQueue(d.queue)
@@ -177,7 +177,12 @@ func (d *Device) updateCurrentWork() {
 }
 
 func (d *Device) Run() {
-	err := d.runDevice()
+	var err error
+	if d.cuda {
+		err = d.runCuDevice()
+	} else {
+		err = d.runDevice()
+	}
 	if err != nil {
 		minrLog.Errorf("Error on device: %v", err)
 	}
@@ -214,122 +219,6 @@ func (d *Device) testFoundCandidate() {
 	//need to match
 	//00000000df6ffb6059643a9215f95751baa7b1ed8aa93edfeb9a560ecb1d5884
 	//stratum submit {"params": ["test", "76df", "0200000000a461f2e3014335", "5783c78e", "e38c6e00"], "id": 4, "method": "mining.submit"}
-}
-
-func (d *Device) runDevice() error {
-	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
-	outputData := make([]uint32, outputBufferSize)
-
-	// Bump the extraNonce for the device it's running on
-	// when you begin mining. This ensures each GPU is doing
-	// different work. If the extraNonce has already been
-	// set for valid work, restore that.
-	d.extraNonce += uint32(d.index) << 24
-	d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
-
-	var status cl.CL_int
-	for {
-		d.updateCurrentWork()
-
-		select {
-		case <-d.quit:
-			return nil
-		default:
-		}
-
-		// Increment extraNonce.
-		util.RolloverExtraNonce(&d.extraNonce)
-		d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
-
-		// Update the timestamp. Only solo work allows you to roll
-		// the timestamp.
-		ts := d.work.JobTime
-		if d.work.IsGetWork {
-			diffSeconds := uint32(time.Now().Unix()) - d.work.TimeReceived
-			ts = d.work.JobTime + diffSeconds
-		}
-		d.lastBlock[work.TimestampWord] = util.Uint32EndiannessSwap(ts)
-
-		// arg 0: pointer to the buffer
-		obuf := d.outputBuffer
-		status = cl.CLSetKernelArg(d.kernel, 0,
-			cl.CL_size_t(unsafe.Sizeof(obuf)),
-			unsafe.Pointer(&obuf))
-		if status != cl.CL_SUCCESS {
-			return clError(status, "CLSetKernelArg")
-		}
-
-		// args 1..8: midstate
-		for i := 0; i < 8; i++ {
-			ms := d.midstate[i]
-			status = cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+1),
-				uint32Size, unsafe.Pointer(&ms))
-			if status != cl.CL_SUCCESS {
-				return clError(status, "CLSetKernelArg")
-			}
-		}
-
-		// args 9..20: lastBlock except nonce
-		i2 := 0
-		for i := 0; i < 12; i++ {
-			if i2 == work.Nonce0Word {
-				i2++
-			}
-			lb := d.lastBlock[i2]
-			status = cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+9),
-				uint32Size, unsafe.Pointer(&lb))
-			if status != cl.CL_SUCCESS {
-				return clError(status, "CLSetKernelArg")
-			}
-			i2++
-		}
-
-		// Clear the found count from the buffer
-		status = cl.CLEnqueueWriteBuffer(d.queue, d.outputBuffer,
-			cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
-			0, nil, nil)
-		if status != cl.CL_SUCCESS {
-			return clError(status, "CLEnqueueWriteBuffer")
-		}
-
-		// Execute the kernel and follow its execution time.
-		currentTime := time.Now()
-		var globalWorkSize [1]cl.CL_size_t
-		globalWorkSize[0] = cl.CL_size_t(d.workSize)
-		var localWorkSize [1]cl.CL_size_t
-		localWorkSize[0] = localWorksize
-		status = cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
-			globalWorkSize[:], localWorkSize[:], 0, nil, nil)
-		if status != cl.CL_SUCCESS {
-			return clError(status, "CLEnqueueNDRangeKernel")
-		}
-
-		// Read the output buffer.
-		cl.CLEnqueueReadBuffer(d.queue, d.outputBuffer, cl.CL_TRUE, 0,
-			uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
-			nil, nil)
-		if status != cl.CL_SUCCESS {
-			return clError(status, "CLEnqueueReadBuffer")
-		}
-
-		for i := uint32(0); i < outputData[0]; i++ {
-			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
-				"extraNonce %08x, workID %08x, timestamp %08x",
-				d.index, i+1, outputData[i+1], d.lastBlock[work.Nonce1Word],
-				util.Uint32EndiannessSwap(d.currentWorkID),
-				d.lastBlock[work.TimestampWord])
-
-			// Assess the work. If it's below target, it'll be rejected
-			// here. The mining algorithm currently sends this function any
-			// difficulty 1 shares.
-			d.foundCandidate(d.lastBlock[work.TimestampWord], outputData[i+1],
-				d.lastBlock[work.Nonce1Word])
-		}
-
-		elapsedTime := time.Since(currentTime)
-		minrLog.Tracef("GPU #%d: Kernel execution to read time: %v", d.index,
-			elapsedTime)
-	}
 }
 
 func (d *Device) foundCandidate(ts, nonce0, nonce1 uint32) {

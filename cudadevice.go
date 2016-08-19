@@ -7,6 +7,7 @@ import (
 
 	"github.com/mumax/3/cuda/cu"
 
+	"github.com/decred/gominer/util"
 	"github.com/decred/gominer/work"
 )
 
@@ -19,8 +20,6 @@ func getCUInfo() ([]cu.Device, error) {
 	// XXX Do this more like ListCuDevices
 	for i := 0; i < ids; i++ {
 		dev := cu.DeviceGet(i)
-		ctx := cu.CtxCreate(cu.CTX_SCHED_AUTO, dev)
-		cu.CtxSetCurrent(ctx)
 		CUdevices = append(CUdevices, dev)
 		minrLog.Infof("%v: %v", i, dev.Name())
 		// XXX check cudaGetDeviceProperties?
@@ -69,6 +68,28 @@ func NewCuDevice(index int, deviceID cu.Device,
 	// Create tue CU context
 	d.cuContext = cu.CtxCreate(cu.CTX_SCHED_AUTO, deviceID)
 
+	// kernel is built with nvcc, not an api call so much bet done
+	// at compile time.
+
+	// Autocalibrate?
+
 	return d, nil
 
+}
+
+func (d *Device) runCuDevice() error {
+	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
+	//outputData := make([]uint32, outputBufferSize)
+
+	// Set the current context
+	cu.CtxSetCurrent(d.cuContext)
+
+	// Bump the extraNonce for the device it's running on
+	// when you begin mining. This ensures each GPU is doing
+	// different work. If the extraNonce has already been
+	// set for valid work, restore that.
+	d.extraNonce += uint32(d.index) << 24
+	d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
+
+	return nil
 }
