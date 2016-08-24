@@ -71,6 +71,10 @@ func NewCuDevice(index int, deviceID cu.Device,
 	// kernel is built with nvcc, not an api call so much bet done
 	// at compile time.
 
+	// Load the kernel and get function.
+	mod := cu.ModuleLoad(cfg.CuKernel)
+	f := mod.GetFunction("hash")
+
 	// Autocalibrate?
 
 	return d, nil
