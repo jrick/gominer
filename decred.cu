@@ -8,6 +8,8 @@
  * Alexis Provos - Jun 2016
  */
 
+// nvcc  -I. -c decred.cu --cubin
+
 #include <stdint.h>
 #include <memory.h>
 #include <miner.h>
