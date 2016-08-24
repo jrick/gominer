@@ -82,6 +82,8 @@ type Device struct {
 	// Items for CUDA device
 	cuDeviceID cu.Device
 	cuContext  cu.Context
+	cuModule   cu.Module
+	cuKernel   cu.Function
 
 	workSize uint32
 

@@ -72,8 +72,8 @@ func NewCuDevice(index int, deviceID cu.Device,
 	// at compile time.
 
 	// Load the kernel and get function.
-	mod := cu.ModuleLoad(cfg.CuKernel)
-	f := mod.GetFunction("hash")
+	d.cuModule = cu.ModuleLoad(cfg.CuKernel)
+	d.cuKernel = d.cuModule.GetFunction("hash")
 
 	// Autocalibrate?
 
