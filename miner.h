@@ -11,7 +11,6 @@ extern "C" {
 #include <inttypes.h>
 #include <sys/time.h>
 #include <pthread.h>
-#include <jansson.h>
 #include <curl/curl.h>
 
 #ifdef _MSC_VER
@@ -242,16 +241,6 @@ static inline void le16enc(void *pp, uint16_t x)
 void *aligned_calloc(int size);
 void aligned_free(void *ptr);
 
-#if JANSSON_MAJOR_VERSION >= 2
-#define JSON_LOADS(str, err_ptr) json_loads((str), 0, (err_ptr))
-#define JSON_LOADF(str, err_ptr) json_load_file((str), 0, (err_ptr))
-#else
-#define JSON_LOADS(str, err_ptr) json_loads((str), (err_ptr))
-#define JSON_LOADF(str, err_ptr) json_load_file((str), (err_ptr))
-#endif
-
-json_t * json_load_url(char* cfg_url, json_error_t *err);
-
 #define USER_AGENT PACKAGE_NAME "/" PACKAGE_VERSION
 
 void sha256_init(uint32_t *state);
@@ -263,88 +252,12 @@ void sha256d(unsigned char *hash, const unsigned char *data, int len);
 
 struct work;
 
-extern int scanhash_blake256(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done, int8_t blakerounds);
-extern int scanhash_blake2s(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_bmw(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_c11(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
 extern int scanhash_decred(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_deep(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_keccak256(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_fresh(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_fugue256(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_groestlcoin(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_heavy(int thr_id,struct work *work, uint32_t max_nonce, unsigned long *hashes_done, uint32_t maxvote, int blocklen);
-extern int scanhash_jackpot(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_lbry(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_luffa(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_lyra2(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_lyra2v2(int thr_id,struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_myriad(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_neoscrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_nist5(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_pentablake(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_quark(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_qubit(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_sib(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_skeincoin(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_skein2(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_s3(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_vanilla(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done, int8_t blake_rounds);
-extern int scanhash_whirl(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_x11evo(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_x11(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_x13(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_x14(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_x15(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_x17(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_zr5(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done);
-
-extern int scanhash_sha256d(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done);
-extern int scanhash_scrypt(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done,
-	unsigned char *scratchbuf, struct timeval *tv_start, struct timeval *tv_end);
-extern int scanhash_scrypt_jane(int thr_id, struct work *work, uint32_t max_nonce, unsigned long *hashes_done,
-	unsigned char *scratchbuf, struct timeval *tv_start, struct timeval *tv_end);
 
 /* free device allocated memory per algo */
 void algo_free_all(int thr_id);
 
-extern void free_blake256(int thr_id);
-extern void free_blake2s(int thr_id);
-extern void free_bmw(int thr_id);
-extern void free_c11(int thr_id);
 extern void free_decred(int thr_id);
-extern void free_deep(int thr_id);
-extern void free_keccak256(int thr_id);
-extern void free_fresh(int thr_id);
-extern void free_fugue256(int thr_id);
-extern void free_groestlcoin(int thr_id);
-extern void free_heavy(int thr_id);
-extern void free_jackpot(int thr_id);
-extern void free_luffa(int thr_id);
-extern void free_lyra2(int thr_id);
-extern void free_lyra2v2(int thr_id);
-extern void free_myriad(int thr_id);
-extern void free_neoscrypt(int thr_id);
-extern void free_nist5(int thr_id);
-extern void free_pentablake(int thr_id);
-extern void free_quark(int thr_id);
-extern void free_qubit(int thr_id);
-extern void free_sib(int thr_id);
-extern void free_skeincoin(int thr_id);
-extern void free_skein2(int thr_id);
-extern void free_s3(int thr_id);
-extern void free_vanilla(int thr_id);
-extern void free_whirl(int thr_id);
-extern void free_x11evo(int thr_id);
-extern void free_x11(int thr_id);
-extern void free_x13(int thr_id);
-extern void free_x14(int thr_id);
-extern void free_x15(int thr_id);
-extern void free_x17(int thr_id);
-extern void free_zr5(int thr_id);
-//extern void free_sha256d(int thr_id);
-extern void free_scrypt(int thr_id);
-extern void free_scrypt_jane(int thr_id);
 
 /* api related */
 void *api_thread(void *userdata);
@@ -717,13 +630,7 @@ bool pool_switch_url(char *params);
 bool pool_switch(int thr_id, int pooln);
 bool pool_switch_next(int thr_id);
 int pool_get_first_valid(int startfrom);
-bool parse_pool_array(json_t *obj);
 void pool_dump_infos(void);
-
-json_t * json_rpc_call_pool(CURL *curl, struct pool_infos*,
-	const char *req, bool lp_scan, bool lp, int *err);
-json_t * json_rpc_longpoll(CURL *curl, char *lp_url, struct pool_infos*,
-	const char *req, int *err);
 
 bool stratum_socket_full(struct stratum_ctx *sctx, int timeout);
 bool stratum_send_line(struct stratum_ctx *sctx, char *s);
