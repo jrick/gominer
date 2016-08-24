@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <ccminer-config.h>
+//#include <ccminer-config.h>
 
 #include <stdbool.h>
 #include <inttypes.h>
