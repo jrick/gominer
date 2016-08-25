@@ -73,7 +73,7 @@ func NewCuDevice(index int, deviceID cu.Device,
 
 	// Load the kernel and get function.
 	d.cuModule = cu.ModuleLoad(cfg.CuKernel)
-	d.cuKernel = d.cuModule.GetFunction("hash")
+	d.cuKernel = d.cuModule.GetFunction("decred_gpu_hash_nonce")
 
 	d.started = uint32(time.Now().Unix())
 
