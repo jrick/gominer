@@ -99,7 +99,6 @@ func (d *Device) runCuDevice() error {
 	d.extraNonce += uint32(d.index) << 24
 	d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
 
-	var status cl.CL_int
 	for {
 		d.updateCurrentWork()
 
@@ -124,21 +123,15 @@ func (d *Device) runCuDevice() error {
 
 		// arg 0: pointer to the buffer
 		obuf := d.outputBuffer
-		status = cl.CLSetKernelArg(d.kernel, 0,
+		cl.CLSetKernelArg(d.kernel, 0,
 			cl.CL_size_t(unsafe.Sizeof(obuf)),
 			unsafe.Pointer(&obuf))
-		if status != cl.CL_SUCCESS {
-			return clError(status, "CLSetKernelArg")
-		}
 
 		// args 1..8: midstate
 		for i := 0; i < 8; i++ {
 			ms := d.midstate[i]
-			status = cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+1),
+			cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+1),
 				uint32Size, unsafe.Pointer(&ms))
-			if status != cl.CL_SUCCESS {
-				return clError(status, "CLSetKernelArg")
-			}
 		}
 
 		// args 9..20: lastBlock except nonce
@@ -148,21 +141,15 @@ func (d *Device) runCuDevice() error {
 				i2++
 			}
 			lb := d.lastBlock[i2]
-			status = cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+9),
+			cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+9),
 				uint32Size, unsafe.Pointer(&lb))
-			if status != cl.CL_SUCCESS {
-				return clError(status, "CLSetKernelArg")
-			}
 			i2++
 		}
 
 		// Clear the found count from the buffer
-		status = cl.CLEnqueueWriteBuffer(d.queue, d.outputBuffer,
+		cl.CLEnqueueWriteBuffer(d.queue, d.outputBuffer,
 			cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
 			0, nil, nil)
-		if status != cl.CL_SUCCESS {
-			return clError(status, "CLEnqueueWriteBuffer")
-		}
 
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
@@ -170,11 +157,8 @@ func (d *Device) runCuDevice() error {
 		globalWorkSize[0] = cl.CL_size_t(d.workSize)
 		var localWorkSize [1]cl.CL_size_t
 		localWorkSize[0] = localWorksize
-		status = cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
+		cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
 			globalWorkSize[:], localWorkSize[:], 0, nil, nil)
-		if status != cl.CL_SUCCESS {
-			return clError(status, "CLEnqueueNDRangeKernel")
-		}
 
 		// Read the output buffer.
 		cl.CLEnqueueReadBuffer(d.queue, d.outputBuffer, cl.CL_TRUE, 0,
