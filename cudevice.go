@@ -157,6 +157,9 @@ func (d *Device) runCuDevice() error {
 		globalWorkSize[0] = cl.CL_size_t(d.workSize)
 		var localWorkSize [1]cl.CL_size_t
 		localWorkSize[0] = localWorksize
+
+		//cu.LaunchKernel(d.cuKernel,...)
+
 		cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
 			globalWorkSize[:], localWorkSize[:], 0, nil, nil)
 
@@ -164,9 +167,8 @@ func (d *Device) runCuDevice() error {
 		cl.CLEnqueueReadBuffer(d.queue, d.outputBuffer, cl.CL_TRUE, 0,
 			uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
 			nil, nil)
-		if status != cl.CL_SUCCESS {
-			return clError(status, "CLEnqueueReadBuffer")
-		}
+
+		//MemcpyDtoH()
 
 		for i := uint32(0); i < outputData[0]; i++ {
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
