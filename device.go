@@ -121,8 +121,9 @@ func clError(status cl.CL_int, f string) error {
 }
 
 func (d *Device) Release() {
-	// No cuda equivalents to these.
-	if !d.cuda {
+	if d.cuda {
+		cu.CtxDestroy(d.cuContext)
+	} else {
 		cl.CLReleaseKernel(d.kernel)
 		cl.CLReleaseProgram(d.program)
 		cl.CLReleaseCommandQueue(d.queue)
