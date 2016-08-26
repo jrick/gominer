@@ -124,16 +124,16 @@ func (d *Device) runCuDevice() error {
 		d.lastBlock[work.TimestampWord] = util.Uint32EndiannessSwap(ts)
 
 		// arg 0: pointer to the buffer
-		obuf := d.outputBuffer
-		cl.CLSetKernelArg(d.kernel, 0,
-			cl.CL_size_t(unsafe.Sizeof(obuf)),
-			unsafe.Pointer(&obuf))
+		obuf := d.cuOutputBuffer
+		//cl.CLSetKernelArg(d.kernel, 0,
+		//	cl.CL_size_t(unsafe.Sizeof(obuf)),
+		//	unsafe.Pointer(&obuf))
 
 		// args 1..8: midstate
 		for i := 0; i < 8; i++ {
 			ms := d.midstate[i]
-			cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+1),
-				uint32Size, unsafe.Pointer(&ms))
+			//cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+1),
+			//	uint32Size, unsafe.Pointer(&ms))
 		}
 
 		// args 9..20: lastBlock except nonce
