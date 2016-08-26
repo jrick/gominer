@@ -41,11 +41,11 @@ func getCUDevices() ([]cu.Device, error) {
 	maj := version / 1000
 	min := version % 100
 
-	minMaj := 5
-	minMin := 5
+	minMajor := 5
+	minMinor := 5
 
-	if maj < minMaj || (maj == minMaj && min < minMin) {
-		return nil, fmt.Errorf("Driver does not suppoer CUDA %v.%v API", minMaj, minMin)
+	if maj < minMajor || (maj == minMajor && min < minMinor) {
+		return nil, fmt.Errorf("Driver does not suppoer CUDA %v.%v API", minMajer, minMinor)
 	}
 
 	var numDevices int
