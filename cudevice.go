@@ -11,6 +11,8 @@ import (
 
 	"github.com/decred/gominer/util"
 	"github.com/decred/gominer/work"
+
+	"github.com/decred/gominer/cl"
 )
 
 func getCUInfo() ([]cu.Device, error) {
@@ -32,6 +34,17 @@ func getCUInfo() ([]cu.Device, error) {
 // getCUDevices returns the list of devices for the given platform.
 func getCUDevices() ([]cu.Device, error) {
 	cu.Init(0)
+
+	version := cu.Version()
+	fmt.Println(version)
+
+	maj := version / 1000
+	min := version % 100
+
+	if maj < 5 || (maj == 5 && min < 5) {
+		return nil, fmt.Errorf("Driver does not suppoer CUDA %v.%v API", 5, 5)
+	}
+
 	var numDevices int
 	numDevices = cu.DeviceGetCount()
 	if numDevices < 1 {
@@ -142,16 +155,16 @@ func (d *Device) runCuDevice() error {
 			if i2 == work.Nonce0Word {
 				i2++
 			}
-			lb := d.lastBlock[i2]
-			cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+9),
-				uint32Size, unsafe.Pointer(&lb))
+			//lb := d.lastBlock[i2]
+			//cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+9),
+			//	uint32Size, unsafe.Pointer(&lb))
 			i2++
 		}
 
 		// Clear the found count from the buffer
-		cl.CLEnqueueWriteBuffer(d.queue, d.outputBuffer,
-			cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
-			0, nil, nil)
+		//cl.CLEnqueueWriteBuffer(d.queue, d.outputBuffer,
+		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
+		//	0, nil, nil)
 
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
