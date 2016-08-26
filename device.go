@@ -27,9 +27,10 @@ import (
 )
 
 const (
-	outputBufferSize = cl.CL_size_t(64)
-	localWorksize    = 64
-	uint32Size       = cl.CL_size_t(unsafe.Sizeof(cl.CL_uint(0)))
+	outputBufferSize   = cl.CL_size_t(64)
+	localWorksize      = 64
+	uint32Size         = cl.CL_size_t(unsafe.Sizeof(cl.CL_uint(0)))
+	cuOutputBufferSize = 64
 )
 
 var chainParams = &chaincfg.MainNetParams
@@ -80,10 +81,11 @@ type Device struct {
 	kernel       cl.CL_kernel
 
 	// Items for CUDA device
-	cuDeviceID cu.Device
-	cuContext  cu.Context
-	cuModule   cu.Module
-	cuKernel   cu.Function
+	cuDeviceID     cu.Device
+	cuContext      cu.Context
+	cuModule       cu.Module
+	cuKernel       cu.Function
+	cuOutputBuffer []float64
 
 	workSize uint32
 

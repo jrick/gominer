@@ -70,6 +70,8 @@ func NewCuDevice(index int, deviceID cu.Device,
 	// Create tue CU context
 	d.cuContext = cu.CtxCreate(cu.CTX_SCHED_AUTO, deviceID)
 
+	// Create the output buffer
+
 	// kernel is built with nvcc, not an api call so much bet done
 	// at compile time.
 
