@@ -5,7 +5,7 @@ package main
 import (
 	"fmt"
 	"time"
-	"unsafe"
+	//"unsafe"
 
 	"github.com/mumax/3/cuda/cu"
 
@@ -45,7 +45,7 @@ func getCUDevices() ([]cu.Device, error) {
 	minMinor := 5
 
 	if maj < minMajor || (maj == minMajor && min < minMinor) {
-		return nil, fmt.Errorf("Driver does not suppoer CUDA %v.%v API", minMajer, minMinor)
+		return nil, fmt.Errorf("Driver does not suppoer CUDA %v.%v API", minMajor, minMinor)
 	}
 
 	var numDevices int
@@ -105,7 +105,7 @@ func NewCuDevice(index int, deviceID cu.Device,
 
 func (d *Device) runCuDevice() error {
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
-	//outputData := make([]uint32, outputBufferSize)
+	outputData := make([]uint32, outputBufferSize)
 
 	// Set the current context
 	cu.CtxSetCurrent(d.cuContext)
@@ -140,14 +140,14 @@ func (d *Device) runCuDevice() error {
 		d.lastBlock[work.TimestampWord] = util.Uint32EndiannessSwap(ts)
 
 		// arg 0: pointer to the buffer
-		obuf := d.cuOutputBuffer
+		//obuf := d.cuOutputBuffer
 		//cl.CLSetKernelArg(d.kernel, 0,
 		//	cl.CL_size_t(unsafe.Sizeof(obuf)),
 		//	unsafe.Pointer(&obuf))
 
 		// args 1..8: midstate
 		for i := 0; i < 8; i++ {
-			ms := d.midstate[i]
+			//ms := d.midstate[i]
 			//cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+1),
 			//	uint32Size, unsafe.Pointer(&ms))
 		}
@@ -178,13 +178,13 @@ func (d *Device) runCuDevice() error {
 
 		//cu.LaunchKernel(d.cuKernel,...)
 
-		cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
-			globalWorkSize[:], localWorkSize[:], 0, nil, nil)
+		//cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
+		//	globalWorkSize[:], localWorkSize[:], 0, nil, nil)
 
 		// Read the output buffer.
-		cl.CLEnqueueReadBuffer(d.queue, d.outputBuffer, cl.CL_TRUE, 0,
-			uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
-			nil, nil)
+		//cl.CLEnqueueReadBuffer(d.queue, d.outputBuffer, cl.CL_TRUE, 0,
+		//	uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
+		//	nil, nil)
 
 		//MemcpyDtoH()
 
