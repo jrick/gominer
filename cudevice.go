@@ -17,7 +17,6 @@ import (
 
 func getCUInfo() ([]cu.Device, error) {
 	cu.Init(0)
-	// XXX check cudaDriverGetVersion?
 	ids := cu.DeviceGetCount()
 	minrLog.Infof("%v GPUs", ids)
 	var CUdevices []cu.Device
@@ -26,7 +25,6 @@ func getCUInfo() ([]cu.Device, error) {
 		dev := cu.DeviceGet(i)
 		CUdevices = append(CUdevices, dev)
 		minrLog.Infof("%v: %v", i, dev.Name())
-		// XXX check cudaGetDeviceProperties?
 	}
 	return CUdevices, nil
 }
