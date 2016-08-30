@@ -148,31 +148,6 @@ func (d *Device) runCuDevice() error {
 		}
 		d.lastBlock[work.TimestampWord] = util.Uint32EndiannessSwap(ts)
 
-		// arg 0: pointer to the buffer
-		//obuf := d.cuOutputBuffer
-		//cl.CLSetKernelArg(d.kernel, 0,
-		//	cl.CL_size_t(unsafe.Sizeof(obuf)),
-		//	unsafe.Pointer(&obuf))
-
-		// args 1..8: midstate
-		for i := 0; i < 8; i++ {
-			//ms := d.midstate[i]
-			//cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+1),
-			//	uint32Size, unsafe.Pointer(&ms))
-		}
-
-		// args 9..20: lastBlock except nonce
-		i2 := 0
-		for i := 0; i < 12; i++ {
-			if i2 == work.Nonce0Word {
-				i2++
-			}
-			//lb := d.lastBlock[i2]
-			//cl.CLSetKernelArg(d.kernel, cl.CL_uint(i+9),
-			//	uint32Size, unsafe.Pointer(&lb))
-			i2++
-		}
-
 		// Clear the found count from the buffer
 		//cl.CLEnqueueWriteBuffer(d.queue, d.outputBuffer,
 		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
@@ -180,15 +155,18 @@ func (d *Device) runCuDevice() error {
 
 		N := 20
 		a := make([]uint32, N)
+
+		// args 1..8: midstate
 		for i := 0; i < 8; i++ {
 			a[i] = d.midstate[i]
 		}
-		i2 = 0
+		// args 9..20: lastBlock except nonce
+		i2 := 0
 		for i := 0; i < 12; i++ {
 			if i2 == work.Nonce0Word {
 				i2++
 			}
-			a[i] = d.lastBlock[i2]
+			a[i+9] = d.lastBlock[i2]
 			i2++
 		}
 
