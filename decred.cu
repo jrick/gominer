@@ -8,7 +8,7 @@
  * Alexis Provos - Jun 2016
  */
 
-// nvcc  -I. -c decred.cu --cubin
+// nvcc  -I. -c decred.cu --ptx
 
 #include <stdint.h>
 #include <memory.h>
