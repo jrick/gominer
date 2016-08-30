@@ -121,8 +121,11 @@ static uint32_t *h_resNonce[MAX_GPUS];
 	v[ b] = ROTR32(v[ b] ^ v[ c], 7); 		v[b1] = ROTR32(v[b1] ^ v[c1], 7); \
 }
 
-__global__ __launch_bounds__(TPB,1)
-void decred_gpu_hash_nonce(const uint32_t threads, const uint32_t startNonce, uint32_t *resNonce, const uint32_t highTarget)
+extern "C"
+{
+
+//__global__ __launch_bounds__(TPB,1)
+__global__ void decred_gpu_hash_nonce(const uint32_t threads, const uint32_t startNonce, uint32_t *resNonce, const uint32_t highTarget)
 {
 	const uint32_t thread = blockDim.x * blockIdx.x + threadIdx.x;
 
@@ -180,6 +183,8 @@ void decred_gpu_hash_nonce(const uint32_t threads, const uint32_t startNonce, ui
 			}
 		}
 	}
+}
+
 }
 
 __host__

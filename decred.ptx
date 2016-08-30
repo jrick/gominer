@@ -10,27 +10,25 @@
 .target sm_20
 .address_size 64
 
-	// .globl	_Z21decred_gpu_hash_noncejjPjj
+	// .globl	decred_gpu_hash_nonce
 .const .align 16 .b8 c_h[8];
 .const .align 16 .b8 c_data[128];
 .const .align 16 .b8 c_xors[860];
 
-.visible .entry _Z21decred_gpu_hash_noncejjPjj(
-	.param .u32 _Z21decred_gpu_hash_noncejjPjj_param_0,
-	.param .u32 _Z21decred_gpu_hash_noncejjPjj_param_1,
-	.param .u64 _Z21decred_gpu_hash_noncejjPjj_param_2,
-	.param .u32 _Z21decred_gpu_hash_noncejjPjj_param_3
+.visible .entry decred_gpu_hash_nonce(
+	.param .u32 decred_gpu_hash_nonce_param_0,
+	.param .u32 decred_gpu_hash_nonce_param_1,
+	.param .u64 decred_gpu_hash_nonce_param_2,
+	.param .u32 decred_gpu_hash_nonce_param_3
 )
-.maxntid 640, 1, 1
-.minnctapersm 1
 {
 	.reg .pred 	%p<4>;
 	.reg .b32 	%r<2008>;
 	.reg .b64 	%rd<9>;
 
 
-	ld.param.u32 	%r10, [_Z21decred_gpu_hash_noncejjPjj_param_0];
-	ld.param.u32 	%r8, [_Z21decred_gpu_hash_noncejjPjj_param_1];
+	ld.param.u32 	%r10, [decred_gpu_hash_nonce_param_0];
+	ld.param.u32 	%r8, [decred_gpu_hash_nonce_param_1];
 	mov.u32 	%r11, %ctaid.x;
 	mov.u32 	%r12, %ntid.x;
 	mov.u32 	%r13, %tid.x;
@@ -2896,7 +2894,7 @@
 	setp.ne.s32	%p2, %r1982, %r1980;
 	@%p2 bra 	BB0_4;
 
-	ld.param.u32 	%r2007, [_Z21decred_gpu_hash_noncejjPjj_param_3];
+	ld.param.u32 	%r2007, [decred_gpu_hash_nonce_param_3];
 	{
 	.reg .b32 %lhs;
 	.reg .b32 %rhs;
@@ -2932,7 +2930,7 @@
 	setp.gt.u32	%p3, %r2004, %r2007;
 	@%p3 bra 	BB0_4;
 
-	ld.param.u64 	%rd8, [_Z21decred_gpu_hash_noncejjPjj_param_2];
+	ld.param.u64 	%rd8, [decred_gpu_hash_nonce_param_2];
 	cvta.to.global.u64 	%rd7, %rd8;
 	atom.global.inc.u32 	%r2005, [%rd7], -1;
 	add.s32 	%r2006, %r2005, 1;
