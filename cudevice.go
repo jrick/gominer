@@ -190,7 +190,7 @@ func (d *Device) runCuDevice() error {
 		//	uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
 		//	nil, nil)
 
-		//MemcpyDtoH()
+		cu.MemcpyDtoH()
 
 		for i := uint32(0); i < outputData[0]; i++ {
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+

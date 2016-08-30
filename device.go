@@ -124,6 +124,7 @@ func clError(status cl.CL_int, f string) error {
 
 func (d *Device) Release() {
 	if d.cuda {
+		// XXX free device mem??
 		cu.CtxDestroy(&d.cuContext)
 	} else {
 		cl.CLReleaseKernel(d.kernel)
