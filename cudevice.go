@@ -167,6 +167,8 @@ func (d *Device) runCuDevice() error {
 		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
 		//	0, nil, nil)
 
+		args := []unsafe.Pointer{unsafe.Pointer()}
+
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
 		var globalWorkSize [1]cl.CL_size_t
@@ -174,7 +176,7 @@ func (d *Device) runCuDevice() error {
 		var localWorkSize [1]cl.CL_size_t
 		localWorkSize[0] = localWorksize
 
-		//cu.LaunchKernel(d.cuKernel,...)
+		cu.LaunchKernel(d.cuKernel, 1, 1, 1, 1, 1, 1, 0, 0, args)
 
 		//cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
 		//	globalWorkSize[:], localWorkSize[:], 0, nil, nil)
