@@ -5,7 +5,7 @@ package main
 import (
 	"fmt"
 	"time"
-	//"unsafe"
+	"unsafe"
 
 	"github.com/mumax/3/cuda/cu"
 
