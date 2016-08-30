@@ -167,11 +167,17 @@ func (d *Device) runCuDevice() error {
 		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
 		//	0, nil, nil)
 
+		N := 20
+		N4 := 4 * int64(N)
+		a := make([]uint32, N)
+		A := cu.MemAlloc(N4)
+		aptr := unsafe.Pointer(&a[0])
+
 		// Copy data to device
 		cu.MemcpyHtoD(A, aptr, N4)
 
 		// Provide pointer args to kernel
-		args := []unsafe.Pointer{unsafe.Pointer()}
+		args := []unsafe.Pointer{unsafe.Pointer(&A)}
 
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
@@ -190,7 +196,7 @@ func (d *Device) runCuDevice() error {
 		//	uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
 		//	nil, nil)
 
-		cu.MemcpyDtoH()
+		cu.MemcpyDtoH(aptr, A, N4)
 
 		for i := uint32(0); i < outputData[0]; i++ {
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
