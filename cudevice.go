@@ -62,6 +62,12 @@ func getCUDevices() ([]cu.Device, error) {
 // ListCuDevices prints a list of CUDA capable GPUs present.
 func ListCuDevices() {
 	// CUDA devices
+	// Because mumux3/3/cuda/cu likes to panic instead of error.
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("No CUDA Capable GPUs present")
+		}
+	}()
 	devices, _ := getCUDevices()
 	for i, dev := range devices {
 		fmt.Printf("CUDA Capbale GPU #%d: %s\n", i, dev.Name())
@@ -82,7 +88,7 @@ func NewCuDevice(index int, deviceID cu.Device,
 	}
 
 	// Create tue CU context
-	d.cuContext = cu.CtxCreate(cu.CTX_SCHED_AUTO, deviceID)
+	d.cuContext = cu.CtxCreate(cu.CTX_MAP_HOST, deviceID)
 
 	// Create the output buffer
 
@@ -114,9 +120,12 @@ func (d *Device) runCuDevice() error {
 
 	for {
 		// Set the current context
-		//cu.CtxSetCurrent(d.cuContext)
-		//fmt.Println("CtxGetApiVersion:", d.cuContext.ApiVersion())
-		//fmt.Println("CtxGetDevice:", cu.CtxGetDevice())
+		d.cuContext.SetCurrent()
+		fmt.Println("CtxGetApiVersion:", d.cuContext.ApiVersion())
+		fmt.Println("CtxGetDevice:", cu.CtxGetDevice())
+
+		c := cu.CtxGetCurrent()
+		fmt.Printf("ctx: %v\n", c)
 
 		d.updateCurrentWork()
 
