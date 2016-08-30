@@ -167,6 +167,10 @@ func (d *Device) runCuDevice() error {
 		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
 		//	0, nil, nil)
 
+		// Copy data to device
+		cu.MemcpyHtoD(A, aptr, N4)
+
+		// Provide pointer args to kernel
 		args := []unsafe.Pointer{unsafe.Pointer()}
 
 		// Execute the kernel and follow its execution time.
