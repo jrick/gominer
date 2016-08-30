@@ -23,7 +23,7 @@ const (
 	defaultLogDirname     = "logs"
 	defaultLogFilename    = "gominer.log"
 	defaultClKernel       = "blake256.cl"
-	defaultCuKernel       = "decred.cubin"
+	defaultCuKernel       = "decred.ptx"
 )
 
 var (
