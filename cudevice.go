@@ -105,9 +105,6 @@ func (d *Device) runCuDevice() error {
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
 	outputData := make([]uint32, outputBufferSize)
 
-	// Set the current context
-	cu.CtxSetCurrent(d.cuContext)
-
 	// Bump the extraNonce for the device it's running on
 	// when you begin mining. This ensures each GPU is doing
 	// different work. If the extraNonce has already been
@@ -116,6 +113,11 @@ func (d *Device) runCuDevice() error {
 	d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
 
 	for {
+		// Set the current context
+		//cu.CtxSetCurrent(d.cuContext)
+		//fmt.Println("CtxGetApiVersion:", d.cuContext.ApiVersion())
+		//fmt.Println("CtxGetDevice:", cu.CtxGetDevice())
+
 		d.updateCurrentWork()
 
 		select {
@@ -168,8 +170,20 @@ func (d *Device) runCuDevice() error {
 		//	0, nil, nil)
 
 		N := 20
-		N4 := 4 * int64(N)
 		a := make([]uint32, N)
+		for i := 0; i < 8; i++ {
+			a[i] = d.midstate[i]
+		}
+		i2 = 0
+		for i := 0; i < 12; i++ {
+			if i2 == work.Nonce0Word {
+				i2++
+			}
+			a[i] = d.lastBlock[i2]
+			i2++
+		}
+
+		N4 := int64(unsafe.Sizeof(a[0])) * int64(N)
 		A := cu.MemAlloc(N4)
 		aptr := unsafe.Pointer(&a[0])
 
