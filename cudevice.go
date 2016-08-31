@@ -90,6 +90,14 @@ func NewCuDevice(index int, deviceID cu.Device,
 	// Create the CU context
 	d.cuContext = cu.CtxCreate(cu.CTX_MAP_HOST, deviceID)
 
+	// Allocate the input region
+	d.cuContext.SetCurrent()
+
+	N := 20
+	var a []uint64
+	N4 := int64(unsafe.Sizeof(a[0])) * int64(N)
+	d.cuInput = cu.MemAlloc(N4)
+
 	// Create the output buffer
 
 	// kernel is built with nvcc, not an api call so much bet done
