@@ -178,7 +178,7 @@ func (d *Device) runCuDevice() error {
 			i2++
 		}
 
-		N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
+		//N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
 		aptr := unsafe.Pointer(&a[0])
 
 		// Copy data to device
