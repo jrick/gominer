@@ -85,6 +85,7 @@ type Device struct {
 	cuContext      cu.Context
 	cuModule       cu.Module
 	cuKernel       cu.Function
+	cuInput        cu.DevicePtr
 	cuOutputBuffer []float64
 
 	workSize uint32
@@ -124,7 +125,7 @@ func clError(status cl.CL_int, f string) error {
 
 func (d *Device) Release() {
 	if d.cuda {
-		// XXX free device mem??
+		d.cuInput.Free()
 		cu.CtxDestroy(&d.cuContext)
 	} else {
 		cl.CLReleaseKernel(d.kernel)

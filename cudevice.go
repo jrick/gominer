@@ -87,7 +87,7 @@ func NewCuDevice(index int, deviceID cu.Device,
 		workDone:   workDone,
 	}
 
-	// Create tue CU context
+	// Create the CU context
 	d.cuContext = cu.CtxCreate(cu.CTX_MAP_HOST, deviceID)
 
 	// Create the output buffer
@@ -171,14 +171,14 @@ func (d *Device) runCuDevice() error {
 		}
 
 		N4 := int64(unsafe.Sizeof(a[0])) * int64(N)
-		A := cu.MemAlloc(N4)
+		d.cuInput = cu.MemAlloc(N4)
 		aptr := unsafe.Pointer(&a[0])
 
 		// Copy data to device
-		cu.MemcpyHtoD(A, aptr, N4)
+		cu.MemcpyHtoD(d.cuInput, aptr, N4)
 
 		// Provide pointer args to kernel
-		args := []unsafe.Pointer{unsafe.Pointer(&A)}
+		args := []unsafe.Pointer{unsafe.Pointer(&d.cuInput)}
 
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
@@ -197,7 +197,7 @@ func (d *Device) runCuDevice() error {
 		//	uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
 		//	nil, nil)
 
-		cu.MemcpyDtoH(aptr, A, N4)
+		cu.MemcpyDtoH(aptr, d.cuInput, N4)
 
 		for i := uint32(0); i < outputData[0]; i++ {
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
