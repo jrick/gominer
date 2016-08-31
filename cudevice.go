@@ -88,7 +88,7 @@ func NewCuDevice(index int, deviceID cu.Device,
 	}
 
 	// Create the CU context
-	d.cuContext = cu.CtxCreate(cu.CTX_MAP_HOST, deviceID)
+	d.cuContext = cu.CtxCreate(cu.CTX_BLOCKING_SYNC, deviceID)
 
 	// Allocate the input region
 	d.cuContext.SetCurrent()
