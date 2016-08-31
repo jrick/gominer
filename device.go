@@ -86,6 +86,7 @@ type Device struct {
 	cuModule       cu.Module
 	cuKernel       cu.Function
 	cuInput        cu.DevicePtr
+	cuInSize       int
 	cuOutputBuffer []float64
 
 	workSize uint32

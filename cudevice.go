@@ -93,9 +93,9 @@ func NewCuDevice(index int, deviceID cu.Device,
 	// Allocate the input region
 	d.cuContext.SetCurrent()
 
-	N := 20
+	d.cuInSize = 21
 	var a []uint64
-	N4 := int64(unsafe.Sizeof(a[0])) * int64(N)
+	N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
 	d.cuInput = cu.MemAlloc(N4)
 
 	// Create the output buffer
@@ -162,8 +162,7 @@ func (d *Device) runCuDevice() error {
 		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
 		//	0, nil, nil)
 
-		N := 20
-		a := make([]uint32, N)
+		a := make([]uint32, d.cuInSize)
 
 		// args 1..8: midstate
 		for i := 0; i < 8; i++ {
@@ -175,11 +174,12 @@ func (d *Device) runCuDevice() error {
 			if i2 == work.Nonce0Word {
 				i2++
 			}
+			fmt.Println("!!!!!!!!!!!!!!!!!!!! ", i+9)
 			a[i+9] = d.lastBlock[i2]
 			i2++
 		}
 
-		N4 := int64(unsafe.Sizeof(a[0])) * int64(N)
+		N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
 		d.cuInput = cu.MemAlloc(N4)
 		aptr := unsafe.Pointer(&a[0])
 
