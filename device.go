@@ -125,6 +125,7 @@ func clError(status cl.CL_int, f string) error {
 
 func (d *Device) Release() {
 	if d.cuda {
+		d.cuContext.SetCurrent()
 		d.cuInput.Free()
 		cu.CtxDestroy(&d.cuContext)
 	} else {
