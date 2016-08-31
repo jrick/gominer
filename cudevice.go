@@ -174,7 +174,6 @@ func (d *Device) runCuDevice() error {
 			if i2 == work.Nonce0Word {
 				i2++
 			}
-			fmt.Println("!!!!!!!!!!!!!!!!!!!! ", i+9)
 			a[i+9] = d.lastBlock[i2]
 			i2++
 		}
