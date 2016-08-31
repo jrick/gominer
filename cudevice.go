@@ -87,25 +87,9 @@ func NewCuDevice(index int, deviceID cu.Device,
 		workDone:   workDone,
 	}
 
-	// Create the CU context
-	d.cuContext = cu.CtxCreate(cu.CTX_BLOCKING_SYNC, deviceID)
-
-	// Allocate the input region
-	d.cuContext.SetCurrent()
-
 	d.cuInSize = 21
-	var a []uint64
-	N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
-	d.cuInput = cu.MemAlloc(N4)
 
 	// Create the output buffer
-
-	// kernel is built with nvcc, not an api call so much bet done
-	// at compile time.
-
-	// Load the kernel and get function.
-	d.cuModule = cu.ModuleLoad(cfg.CuKernel)
-	d.cuKernel = d.cuModule.GetFunction("decred_gpu_hash_nonce")
 
 	d.started = uint32(time.Now().Unix())
 
@@ -119,13 +103,30 @@ func (d *Device) runCuDevice() error {
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
 	outputData := make([]uint32, outputBufferSize)
 
+	// Create the CU context
+	d.cuContext = cu.CtxCreate(cu.CTX_BLOCKING_SYNC, d.cuDeviceID)
+
+	// Allocate the input region
+	d.cuContext.SetCurrent()
+
+	var a []uint64
+	N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
+	d.cuInput = cu.MemAlloc(N4)
+
+	// kernel is built with nvcc, not an api call so much bet done
+	// at compile time.
+
+	// Load the kernel and get function.
+	d.cuModule = cu.ModuleLoad(cfg.CuKernel)
+	d.cuKernel = d.cuModule.GetFunction("decred_gpu_hash_nonce")
+
 	c := cu.CtxGetCurrent()
 	fmt.Printf("ctx before: %v\n", c)
 
 	// Set the current context
-	d.cuContext.SetCurrent()
-	c = cu.CtxGetCurrent()
-	fmt.Printf("ctx after: %v\n", c)
+	//d.cuContext.SetCurrent()
+	//c = cu.CtxGetCurrent()
+	//fmt.Printf("ctx after: %v\n", c)
 
 	// Bump the extraNonce for the device it's running on
 	// when you begin mining. This ensures each GPU is doing
@@ -192,6 +193,9 @@ func (d *Device) runCuDevice() error {
 		globalWorkSize[0] = cl.CL_size_t(d.workSize)
 		var localWorkSize [1]cl.CL_size_t
 		localWorkSize[0] = localWorksize
+
+		//c = cu.CtxGetCurrent()
+		//fmt.Printf("ctx before kernel: %v\n", c)
 
 		cu.LaunchKernel(d.cuKernel, 1, 1, 1, 1, 1, 1, 0, 0, args)
 
