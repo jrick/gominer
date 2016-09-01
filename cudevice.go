@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 	"unsafe"
 
@@ -100,6 +101,8 @@ func NewCuDevice(index int, deviceID cu.Device,
 }
 
 func (d *Device) runCuDevice() error {
+	runtime.LockOSThread()
+
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
 	outputData := make([]uint32, outputBufferSize)
 
@@ -109,8 +112,9 @@ func (d *Device) runCuDevice() error {
 	// Allocate the input region
 	d.cuContext.SetCurrent()
 
-	var a []uint64
-	N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
+	a := make([]uint32, d.cuInSize)
+	aptr := unsafe.Pointer(&a[0])
+	N4 := int64(4 * d.cuInSize)
 	d.cuInput = cu.MemAlloc(N4)
 
 	// kernel is built with nvcc, not an api call so much bet done
@@ -120,8 +124,8 @@ func (d *Device) runCuDevice() error {
 	d.cuModule = cu.ModuleLoad(cfg.CuKernel)
 	d.cuKernel = d.cuModule.GetFunction("decred_gpu_hash_nonce")
 
-	c := cu.CtxGetCurrent()
-	fmt.Printf("ctx before: %v\n", c)
+	//c := cu.CtxGetCurrent()
+	//fmt.Printf("ctx before: %v\n", c)
 
 	// Set the current context
 	//d.cuContext.SetCurrent()
@@ -162,7 +166,7 @@ func (d *Device) runCuDevice() error {
 		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
 		//	0, nil, nil)
 
-		a := make([]uint32, d.cuInSize)
+		//a := make([]uint32, d.cuInSize)
 
 		// args 1..8: midstate
 		for i := 0; i < 8; i++ {
@@ -179,7 +183,6 @@ func (d *Device) runCuDevice() error {
 		}
 
 		//N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
-		aptr := unsafe.Pointer(&a[0])
 
 		// Copy data to device
 		cu.MemcpyHtoD(d.cuInput, aptr, N4)
