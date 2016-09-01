@@ -164,9 +164,11 @@ func (d *Device) runCuDevice() error {
 		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
 		//	0, nil, nil)
 
+		// arg 0: cleared
+		outputData[0] = 0
 		// args 1..8: midstate
 		for i := 0; i < 8; i++ {
-			outputData[i] = d.midstate[i]
+			outputData[i+1] = d.midstate[i]
 		}
 		// args 9..20: lastBlock except nonce
 		i2 := 0
