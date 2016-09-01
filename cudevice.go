@@ -104,7 +104,7 @@ func (d *Device) runCuDevice() error {
 	runtime.LockOSThread()
 
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
-	outputData := make([]uint32, outputBufferSize)
+	outputData := make([]uint32, d.cuInSize)
 
 	// Create the CU context
 	d.cuContext = cu.CtxCreate(cu.CTX_BLOCKING_SYNC, d.cuDeviceID)
@@ -112,8 +112,6 @@ func (d *Device) runCuDevice() error {
 	// Allocate the input region
 	d.cuContext.SetCurrent()
 
-	a := make([]uint32, d.cuInSize)
-	aptr := unsafe.Pointer(&a[0])
 	N4 := int64(4 * d.cuInSize)
 	d.cuInput = cu.MemAlloc(N4)
 
@@ -166,11 +164,9 @@ func (d *Device) runCuDevice() error {
 		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
 		//	0, nil, nil)
 
-		//a := make([]uint32, d.cuInSize)
-
 		// args 1..8: midstate
 		for i := 0; i < 8; i++ {
-			a[i] = d.midstate[i]
+			outputData[i] = d.midstate[i]
 		}
 		// args 9..20: lastBlock except nonce
 		i2 := 0
@@ -178,17 +174,11 @@ func (d *Device) runCuDevice() error {
 			if i2 == work.Nonce0Word {
 				i2++
 			}
-			a[i+9] = d.lastBlock[i2]
+			outputData[i+9] = d.lastBlock[i2]
 			i2++
 		}
 
-		//N4 := int64(unsafe.Sizeof(a[0])) * int64(d.cuInSize)
-
-		// Copy data to device
-		cu.MemcpyHtoD(d.cuInput, aptr, N4)
-
-		// Provide pointer args to kernel
-		args := []unsafe.Pointer{unsafe.Pointer(&d.cuInput)}
+		cu.MemcpyHtoD(d.cuInput, unsafe.Pointer(&outputData[0]), N4)
 
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
@@ -197,10 +187,19 @@ func (d *Device) runCuDevice() error {
 		var localWorkSize [1]cl.CL_size_t
 		localWorkSize[0] = localWorksize
 
-		//c = cu.CtxGetCurrent()
-		//fmt.Printf("ctx before kernel: %v\n", c)
-
-		cu.LaunchKernel(d.cuKernel, 1, 1, 1, 1, 1, 1, 0, 0, args)
+		grid := 1               // TODO
+		block := 1              // TODO
+		throughput := uint32(0) // TODO
+		nonce := uint32(0)      // TODO
+		targetHigh := uint32(0) // TODO
+		// Provide pointer args to kernel
+		args := []unsafe.Pointer{
+			unsafe.Pointer(&throughput),
+			unsafe.Pointer(&nonce),
+			unsafe.Pointer(&d.cuInput),
+			unsafe.Pointer(&targetHigh),
+		}
+		cu.LaunchKernel(d.cuKernel, grid, 1, 1, block, 1, 1, 0, 0, args)
 
 		//cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
 		//	globalWorkSize[:], localWorkSize[:], 0, nil, nil)
@@ -210,7 +209,7 @@ func (d *Device) runCuDevice() error {
 		//	uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
 		//	nil, nil)
 
-		cu.MemcpyDtoH(aptr, d.cuInput, N4)
+		cu.MemcpyDtoH(unsafe.Pointer(&outputData[0]), d.cuInput, N4)
 
 		for i := uint32(0); i < outputData[0]; i++ {
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
