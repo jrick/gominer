@@ -12,8 +12,6 @@ import (
 
 	"github.com/decred/gominer/util"
 	"github.com/decred/gominer/work"
-
-	"github.com/decred/gominer/cl"
 )
 
 func getCUInfo() ([]cu.Device, error) {
@@ -90,8 +88,6 @@ func NewCuDevice(index int, deviceID cu.Device,
 
 	d.cuInSize = 21
 
-	// Create the output buffer
-
 	d.started = uint32(time.Now().Unix())
 
 	// Autocalibrate?
@@ -101,6 +97,7 @@ func NewCuDevice(index int, deviceID cu.Device,
 }
 
 func (d *Device) runCuDevice() error {
+	// Need to have this stuff here for a ctx vs thread issue.
 	runtime.LockOSThread()
 
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
@@ -121,14 +118,6 @@ func (d *Device) runCuDevice() error {
 	// Load the kernel and get function.
 	d.cuModule = cu.ModuleLoad(cfg.CuKernel)
 	d.cuKernel = d.cuModule.GetFunction("decred_gpu_hash_nonce")
-
-	//c := cu.CtxGetCurrent()
-	//fmt.Printf("ctx before: %v\n", c)
-
-	// Set the current context
-	//d.cuContext.SetCurrent()
-	//c = cu.CtxGetCurrent()
-	//fmt.Printf("ctx after: %v\n", c)
 
 	// Bump the extraNonce for the device it's running on
 	// when you begin mining. This ensures each GPU is doing
@@ -159,11 +148,6 @@ func (d *Device) runCuDevice() error {
 		}
 		d.lastBlock[work.TimestampWord] = util.Uint32EndiannessSwap(ts)
 
-		// Clear the found count from the buffer
-		//cl.CLEnqueueWriteBuffer(d.queue, d.outputBuffer,
-		//	cl.CL_FALSE, 0, uint32Size, unsafe.Pointer(&zeroSlice[0]),
-		//	0, nil, nil)
-
 		// arg 0: cleared
 		outputData[0] = 0
 		// args 1..8: midstate
@@ -184,10 +168,10 @@ func (d *Device) runCuDevice() error {
 
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
-		var globalWorkSize [1]cl.CL_size_t
-		globalWorkSize[0] = cl.CL_size_t(d.workSize)
-		var localWorkSize [1]cl.CL_size_t
-		localWorkSize[0] = localWorksize
+		//var globalWorkSize [1]cl.CL_size_t
+		//globalWorkSize[0] = cl.CL_size_t(d.workSize)
+		//var localWorkSize [1]cl.CL_size_t
+		//localWorkSize[0] = localWorksize
 
 		grid := 1               // TODO
 		block := 1              // TODO
@@ -202,14 +186,6 @@ func (d *Device) runCuDevice() error {
 			unsafe.Pointer(&targetHigh),
 		}
 		cu.LaunchKernel(d.cuKernel, grid, 1, 1, block, 1, 1, 0, 0, args)
-
-		//cl.CLEnqueueNDRangeKernel(d.queue, d.kernel, 1, nil,
-		//	globalWorkSize[:], localWorkSize[:], 0, nil, nil)
-
-		// Read the output buffer.
-		//cl.CLEnqueueReadBuffer(d.queue, d.outputBuffer, cl.CL_TRUE, 0,
-		//	uint32Size*outputBufferSize, unsafe.Pointer(&outputData[0]), 0,
-		//	nil, nil)
 
 		cu.MemcpyDtoH(unsafe.Pointer(&outputData[0]), d.cuInput, N4)
 
