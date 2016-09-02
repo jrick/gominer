@@ -15,7 +15,11 @@ import (
 )
 
 const (
+	// From ccminer
 	threadsPerBlock = 640
+	blockx          = threadsPerBlock
+	blocky          = 1
+	blockz          = 1
 )
 
 func getCUInfo() ([]cu.Device, error) {
@@ -177,9 +181,10 @@ func (d *Device) runCuDevice() error {
 		//var localWorkSize [1]cl.CL_size_t
 		//localWorkSize[0] = localWorksize
 
-		grid := 1                // TODO
-		block := threadsPerBlock // TODO
-		throughput := uint32(0)  // TODO
+		gridx := 1              // TODO
+		gridy := 1              // TODO
+		gridz := 1              // TODO
+		throughput := uint32(0) // TODO
 		// Which nonceword is this?  In ccminer it is &pdata[35]
 		nonce := d.lastBlock[work.Nonce1Word]
 		targetHigh := uint32(0) // TODO
@@ -191,7 +196,7 @@ func (d *Device) runCuDevice() error {
 			unsafe.Pointer(&d.cuInput),
 			unsafe.Pointer(&targetHigh),
 		}
-		cu.LaunchKernel(d.cuKernel, grid, 1, 1, block, 1, 1, 0, 0, args)
+		cu.LaunchKernel(d.cuKernel, gridx, gridy, gridz, blockx, blocky, blockz, 0, 0, args)
 
 		cu.MemcpyDtoH(unsafe.Pointer(&outputData[0]), d.cuInput, N4)
 
