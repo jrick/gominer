@@ -14,7 +14,7 @@ import (
 	"github.com/decred/gominer/work"
 )
 
-var (
+const (
 	threadsPerBlock = 640
 )
 
