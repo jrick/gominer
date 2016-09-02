@@ -181,11 +181,15 @@ func (d *Device) runCuDevice() error {
 		//var localWorkSize [1]cl.CL_size_t
 		//localWorkSize[0] = localWorksize
 
-		gridx := 1              // TODO
-		gridy := 1              // TODO
-		gridz := 1              // TODO
-		throughput := uint32(0) // TODO
-		// Which nonceword is this?  In ccminer it is &pdata[35]
+		throughput := uint32(536870912) // TODO
+
+		//gridx := int((throughput + threadsPerBlock - 1) / threadsPerBlock) // TODO
+		// ccminer uses the above which gives 838861 on my test box but
+		// that fails on same machine with gominer.
+		gridx := 50000
+		gridy := 1
+		gridz := 1
+		// TODO Which nonceword is this?  In ccminer it is &pdata[35]
 		nonce := d.lastBlock[work.Nonce1Word]
 		targetHigh := uint32(0) // TODO
 
