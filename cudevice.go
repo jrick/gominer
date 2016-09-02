@@ -14,6 +14,10 @@ import (
 	"github.com/decred/gominer/work"
 )
 
+var (
+	threadsPerBlock = 640
+)
+
 func getCUInfo() ([]cu.Device, error) {
 	cu.Init(0)
 	ids := cu.DeviceGetCount()
@@ -173,12 +177,13 @@ func (d *Device) runCuDevice() error {
 		//var localWorkSize [1]cl.CL_size_t
 		//localWorkSize[0] = localWorksize
 
-		grid := 1               // TODO
-		block := 1              // TODO
-		throughput := uint32(0) // TODO
+		grid := 1                // TODO
+		block := threadsPerBlock // TODO
+		throughput := uint32(0)  // TODO
 		// Which nonceword is this?  In ccminer it is &pdata[35]
 		nonce := d.lastBlock[work.Nonce1Word]
 		targetHigh := uint32(0) // TODO
+
 		// Provide pointer args to kernel
 		args := []unsafe.Pointer{
 			unsafe.Pointer(&throughput),
