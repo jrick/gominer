@@ -176,7 +176,8 @@ func (d *Device) runCuDevice() error {
 		grid := 1               // TODO
 		block := 1              // TODO
 		throughput := uint32(0) // TODO
-		nonce := uint32(0)      // TODO
+		// Which nonceword is this?  In ccminer it is &pdata[35]
+		nonce := d.lastBlock[work.Nonce1Word]
 		targetHigh := uint32(0) // TODO
 		// Provide pointer args to kernel
 		args := []unsafe.Pointer{
