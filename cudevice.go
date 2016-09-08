@@ -160,7 +160,7 @@ func (d *Device) runCuDevice() error {
 
 		nonceResultsH[0] = 0
 
-		cu.MemcpyHtoD(nonceResultsD, unsafe.Pointer(&nonceResultsH[0]), d.cuInSize)
+		cu.MemcpyHtoD(nonceResultsD, unsafe.Pointer(&nonceResultsH[0]), d.cuInSize * 4)
 
 		copy(endianData, d.work.Data[:128])
 		for i, j := 128, 0; i < 180; {
@@ -196,10 +196,10 @@ func (d *Device) runCuDevice() error {
 		}
 		cu.LaunchKernel(d.cuKernel, gridx, gridy, gridz, blockx, blocky, blockz, 0, 0, args)
 
-		cu.MemcpyDtoH(unsafe.Pointer(&nonceResultsH[0]), nonceResultsD, d.cuInSize)
+		cu.MemcpyDtoH(unsafe.Pointer(&nonceResultsH[0]), nonceResultsD, d.cuInSize * 4)
 
 		for i := uint32(0); i < nonceResultsH[0]; i++ {
-			minrLog.Debugf("%x", nonceResultsH)
+			minrLog.Debugf("%x %v %v", nonceResultsH, i, nonceResultsH[0])
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
 				"extraNonce %08x, workID %08x, timestamp %08x",
 				d.index, i+1, nonceResultsH[i+1], d.lastBlock[work.Nonce1Word],
