@@ -187,6 +187,7 @@ __global__ void decred_gpu_hash_nonce(const uint32_t threads, const uint32_t sta
 
 }
 
+extern "C" {
 __host__
 void decred_cpu_setBlock_52(const uint32_t *input)
 {
@@ -345,6 +346,7 @@ void decred_cpu_setBlock_52(const uint32_t *input)
 
 	CUDA_SAFE_CALL(cudaMemcpyToSymbol(c_xors, preXOR, 215*sizeof(uint32_t), 0, cudaMemcpyHostToDevice));
 }
+}
 
 /* ############################################################################################################################### */
 
@@ -353,6 +355,7 @@ static bool init[MAX_GPUS] = { 0 };
 // nonce position is different in decred
 #define DCR_NONCE_OFT32 35
 
+#if 0
 extern "C" int scanhash_decred(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done)
 {
 	uint32_t _ALIGN(64) endiandata[48];
@@ -448,6 +451,7 @@ extern "C" int scanhash_decred(int thr_id, struct work* work, uint32_t max_nonce
 	MyStreamSynchronize(NULL, 0, device_map[thr_id]);
 	return 0;
 }
+#endif
 
 // cleanup
 extern "C" void free_decred(int thr_id)

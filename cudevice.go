@@ -2,6 +2,12 @@
 
 package main
 
+/*
+#cgo LDFLAGS: -L/opt/cuda/lib64 -L/opt/cuda/lib -lcuda -lcudart obj/cuda.a
+#include <stdint.h>
+void decred_cpu_setBlock_52(const uint32_t *input);
+*/
+import "C"
 import (
 	"fmt"
 	"runtime"
@@ -108,17 +114,11 @@ func (d *Device) runCuDevice() error {
 	// Need to have this stuff here for a ctx vs thread issue.
 	runtime.LockOSThread()
 
-	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
-	outputData := make([]uint32, d.cuInSize)
-
 	// Create the CU context
 	d.cuContext = cu.CtxCreate(cu.CTX_BLOCKING_SYNC, d.cuDeviceID)
 
 	// Allocate the input region
 	d.cuContext.SetCurrent()
-
-	N4 := int64(4 * d.cuInSize)
-	d.cuInput = cu.MemAlloc(N4)
 
 	// kernel is built with nvcc, not an api call so much bet done
 	// at compile time.
@@ -127,12 +127,19 @@ func (d *Device) runCuDevice() error {
 	d.cuModule = cu.ModuleLoad(cfg.CuKernel)
 	d.cuKernel = d.cuModule.GetFunction("decred_gpu_hash_nonce")
 
-	// Bump the extraNonce for the device it's running on
-	// when you begin mining. This ensures each GPU is doing
-	// different work. If the extraNonce has already been
-	// set for valid work, restore that.
-	d.extraNonce += uint32(d.index) << 24
-	d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
+	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
+	nonceResultsH := make([]uint32, d.cuInSize)
+	nonceResultsD := cu.MemAlloc(d.cuInSize * 4)
+
+	const N4 = 48
+	endianDataH := make([]byte, N4 * 4)
+	endianDataD := cu.MemAlloc(N4 * 4)
+	defer endianDataD.Free()
+
+	copy(endianDataH, d.work.Data[:180])
+
+	C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(&endianDataH[0])))
+
 
 	for {
 		d.updateCurrentWork()
@@ -156,30 +163,12 @@ func (d *Device) runCuDevice() error {
 		}
 		d.lastBlock[work.TimestampWord] = util.Uint32EndiannessSwap(ts)
 
-		// arg 0: cleared
-		outputData[0] = 0
-		// args 1..8: midstate
-		for i := 0; i < 8; i++ {
-			outputData[i+1] = d.midstate[i]
-		}
-		// args 9..20: lastBlock except nonce
-		i2 := 0
-		for i := 0; i < 12; i++ {
-			if i2 == work.Nonce0Word {
-				i2++
-			}
-			outputData[i+9] = d.lastBlock[i2]
-			i2++
-		}
+		nonceResultsH[0] = 0
 
-		cu.MemcpyHtoD(d.cuInput, unsafe.Pointer(&outputData[0]), N4)
+		cu.MemcpyHtoD(nonceResultsD, unsafe.Pointer(&nonceResultsH[0]), d.cuInSize)
 
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
-		//var globalWorkSize [1]cl.CL_size_t
-		//globalWorkSize[0] = cl.CL_size_t(d.workSize)
-		//var localWorkSize [1]cl.CL_size_t
-		//localWorkSize[0] = localWorksize
 
 		throughput := uint32(536870912) // TODO
 
@@ -197,24 +186,24 @@ func (d *Device) runCuDevice() error {
 		args := []unsafe.Pointer{
 			unsafe.Pointer(&throughput),
 			unsafe.Pointer(&nonce),
-			unsafe.Pointer(&d.cuInput),
+			unsafe.Pointer(&nonceResultsD),
 			unsafe.Pointer(&targetHigh),
 		}
 		cu.LaunchKernel(d.cuKernel, gridx, gridy, gridz, blockx, blocky, blockz, 0, 0, args)
 
-		cu.MemcpyDtoH(unsafe.Pointer(&outputData[0]), d.cuInput, N4)
+		cu.MemcpyDtoH(unsafe.Pointer(&nonceResultsH[0]), nonceResultsD, d.cuInSize)
 
-		for i := uint32(0); i < outputData[0]; i++ {
+		for i := uint32(0); i < nonceResultsH[0]; i++ {
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
 				"extraNonce %08x, workID %08x, timestamp %08x",
-				d.index, i+1, outputData[i+1], d.lastBlock[work.Nonce1Word],
+				d.index, i+1, nonceResultsH[i+1], d.lastBlock[work.Nonce1Word],
 				util.Uint32EndiannessSwap(d.currentWorkID),
 				d.lastBlock[work.TimestampWord])
 
 			// Assess the work. If it's below target, it'll be rejected
 			// here. The mining algorithm currently sends this function any
 			// difficulty 1 shares.
-			d.foundCandidate(d.lastBlock[work.TimestampWord], outputData[i+1],
+			d.foundCandidate(d.lastBlock[work.TimestampWord], nonceResultsH[i+1],
 				d.lastBlock[work.Nonce1Word])
 		}
 
