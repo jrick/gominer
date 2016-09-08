@@ -171,6 +171,7 @@ __global__ void decred_gpu_hash_nonce(const uint32_t threads, const uint32_t sta
 
 		//if ((c_h[1]^v[15]) == v[7]) {
 		if (!((c_h[1] ^ v[15] ^ v[7]) && 0x0000FFFF)) {
+			/*
 			v[ 3] += c_xors[i++] + v[4];
 			v[14] = ROL16(v[14] ^ v[3]);
 			v[ 9] += v[14];
@@ -182,6 +183,10 @@ __global__ void decred_gpu_hash_nonce(const uint32_t threads, const uint32_t sta
 				resNonce[pos] = nonce;
 				return;
 			}
+			*/
+			uint32_t pos = atomicInc(&resNonce[0], UINT32_MAX)+1;
+			resNonce[pos] = nonce;
+			return;
 		}
 	}
 }

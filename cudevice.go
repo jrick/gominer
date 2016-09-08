@@ -9,6 +9,7 @@ void decred_cpu_setBlock_52(const uint32_t *input);
 */
 import "C"
 import (
+	"encoding/binary"
 	"fmt"
 	"runtime"
 	"time"
@@ -130,16 +131,10 @@ func (d *Device) runCuDevice() error {
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
 	nonceResultsH := make([]uint32, d.cuInSize)
 	nonceResultsD := cu.MemAlloc(d.cuInSize * 4)
+	defer nonceResultsD.Free()
 
 	const N4 = 48
-	endianDataH := make([]byte, N4 * 4)
-	endianDataD := cu.MemAlloc(N4 * 4)
-	defer endianDataD.Free()
-
-	copy(endianDataH, d.work.Data[:180])
-
-	C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(&endianDataH[0])))
-
+	endianData := make([]byte, N4*4)
 
 	for {
 		d.updateCurrentWork()
@@ -166,6 +161,16 @@ func (d *Device) runCuDevice() error {
 		nonceResultsH[0] = 0
 
 		cu.MemcpyHtoD(nonceResultsD, unsafe.Pointer(&nonceResultsH[0]), d.cuInSize)
+
+		copy(endianData, d.work.Data[:128])
+		for i, j := 128, 0; i < 180; {
+			b := make([]byte, 4)
+			binary.LittleEndian.PutUint32(b, d.lastBlock[j])
+			copy(endianData[i:], b)
+			i += 4
+			j++
+		}
+		C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(&endianData[0])))
 
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
@@ -194,6 +199,7 @@ func (d *Device) runCuDevice() error {
 		cu.MemcpyDtoH(unsafe.Pointer(&nonceResultsH[0]), nonceResultsD, d.cuInSize)
 
 		for i := uint32(0); i < nonceResultsH[0]; i++ {
+			minrLog.Debugf("%x", nonceResultsH)
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
 				"extraNonce %08x, workID %08x, timestamp %08x",
 				d.index, i+1, nonceResultsH[i+1], d.lastBlock[work.Nonce1Word],
