@@ -169,7 +169,8 @@ __global__ void decred_gpu_hash_nonce(const uint32_t threads, const uint32_t sta
 		pxorGS2(   0, 4, 8, 12, 1, 5, 9, 13); pxorGS2(   2, 6, 10, 14, 3, 7, 11, 15); pxorx1GS2( 0, 5, 10, 15, 1, 6, 11, 12); pxorGS2(   2, 7, 8, 13, 3, 4, 9, 14);
 		pxorx1GS2( 0, 4, 8, 12, 1, 5, 9, 13); pxorGS2(   2, 6, 10, 14, 3, 7, 11, 15); pxorGS2(   0, 5, 10, 15, 1, 6, 11, 12); pxorGS(    2, 7, 8, 13);
 
-		if ((c_h[1]^v[15]) == v[7]) {
+		//if ((c_h[1]^v[15]) == v[7]) {
+		if (!((c_h[1] ^ v[15] ^ v[7]) && 0x0000FFFF)) {
 			v[ 3] += c_xors[i++] + v[4];
 			v[14] = ROL16(v[14] ^ v[3]);
 			v[ 9] += v[14];
