@@ -26,8 +26,6 @@ const (
 	// From ccminer
 	threadsPerBlock = 640
 	blockx          = threadsPerBlock
-	blocky          = 1
-	blockz          = 1
 )
 
 func getCUInfo() ([]cu.Device, error) {
@@ -184,16 +182,13 @@ func (d *Device) runCuDevice() error {
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
 
-		throughput := uint32(0x20000000) // TODO
-
-		//gridx := int((throughput + threadsPerBlock - 1) / threadsPerBlock) // TODO
-		// ccminer uses the above which gives 838861 on my test box but
-		// that fails on same machine with gominer.
-		gridx := 50000
-		gridy := 1
-		gridz := 1
 		// TODO Which nonceword is this?  In ccminer it is &pdata[35]
 		nonce := d.lastBlock[work.Nonce1Word]
+
+		throughput := uint32(0x20000000)                    // TODO
+		throughput = minUint32(throughput, ^uint32(0)-nonce)
+		gridx := int((throughput + threadsPerBlock - 1) / threadsPerBlock)
+
 		targetHigh := uint32(0) // TODO
 
 		// Provide pointer args to kernel
@@ -203,7 +198,8 @@ func (d *Device) runCuDevice() error {
 			unsafe.Pointer(&nonceResultsD),
 			unsafe.Pointer(&targetHigh),
 		}
-		cu.LaunchKernel(d.cuKernel, gridx, gridy, gridz, blockx, blocky, blockz, 0, 0, args)
+		fmt.Println(gridx, blockx)
+		cu.LaunchKernel(d.cuKernel, gridx, 1, 1, blockx, 1, 1, 0, 0, args)
 
 		cu.MemcpyDtoH(nonceResultsH, nonceResultsD, d.cuInSize*4)
 
@@ -231,4 +227,12 @@ func (d *Device) runCuDevice() error {
 	}
 
 	return nil
+}
+
+func minUint32(a, b uint32) uint32 {
+	if a > b {
+		return a
+	} else {
+		return b
+	}
 }

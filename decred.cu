@@ -127,12 +127,6 @@ extern "C"
 //__global__ __launch_bounds__(TPB,1)
 __global__ void decred_gpu_hash_nonce(const uint32_t threads, const uint32_t startNonce, uint32_t *resNonce, const uint32_t highTarget)
 {
-	/*
-	resNonce[0] = 1;
-	resNonce[1] = 0xdeadbeef;
-	return;
-	*/
-
 	const uint32_t thread = blockDim.x * blockIdx.x + threadIdx.x;
 
 	if (thread < threads)
