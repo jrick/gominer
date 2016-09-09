@@ -150,16 +150,6 @@ func (d *Device) runCuDevice() error {
 	const N4 = 48
 	endianData := make([]byte, N4*4)
 
-	copy(endianData, d.work.Data[:128])
-	for i, j := 128, 0; i < 180; {
-		b := make([]byte, 4)
-		binary.BigEndian.PutUint32(b, d.lastBlock[j])
-		copy(endianData[i:], b)
-		i += 4
-		j++
-	}
-	C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(&endianData[0])))
-
 	for {
 		d.updateCurrentWork()
 
@@ -172,6 +162,16 @@ func (d *Device) runCuDevice() error {
 		// Increment extraNonce.
 		util.RolloverExtraNonce(&d.extraNonce)
 		d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
+
+		copy(endianData, d.work.Data[:128])
+		for i, j := 128, 0; i < 180; {
+			b := make([]byte, 4)
+			binary.BigEndian.PutUint32(b, d.lastBlock[j])
+			copy(endianData[i:], b)
+			i += 4
+			j++
+		}
+		C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(&endianData[0])))
 
 		// Update the timestamp. Only solo work allows you to roll
 		// the timestamp.
