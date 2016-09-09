@@ -111,6 +111,13 @@ func NewCuDevice(index int, deviceID cu.Device,
 }
 
 func (d *Device) runCuDevice() error {
+	// Bump the extraNonce for the device it's running on
+	// when you begin mining. This ensures each GPU is doing
+	// different work. If the extraNonce has already been
+	// set for valid work, restore that.
+	d.extraNonce += uint32(d.index) << 24
+	d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
+
 	// Need to have this stuff here for a ctx vs thread issue.
 	runtime.LockOSThread()
 
@@ -143,6 +150,16 @@ func (d *Device) runCuDevice() error {
 	const N4 = 48
 	endianData := make([]byte, N4*4)
 
+	copy(endianData, d.work.Data[:128])
+	for i, j := 128, 0; i < 180; {
+		b := make([]byte, 4)
+		binary.BigEndian.PutUint32(b, d.lastBlock[j])
+		copy(endianData[i:], b)
+		i += 4
+		j++
+	}
+	C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(&endianData[0])))
+
 	for {
 		d.updateCurrentWork()
 
@@ -169,16 +186,6 @@ func (d *Device) runCuDevice() error {
 
 		cu.MemcpyHtoD(nonceResultsD, nonceResultsH, d.cuInSize*4)
 
-		copy(endianData, d.work.Data[:128])
-		for i, j := 128, 0; i < 180; {
-			b := make([]byte, 4)
-			binary.BigEndian.PutUint32(b, d.lastBlock[j])
-			copy(endianData[i:], b)
-			i += 4
-			j++
-		}
-		C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(&endianData[0])))
-
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
 
@@ -194,7 +201,7 @@ func (d *Device) runCuDevice() error {
 
 		gridx = 52428 // don't ask me why this works.
 
-		targetHigh := uint32(0x1) // TODO
+		targetHigh := ^uint32(0) // TODO
 
 		// Provide pointer args to kernel
 		args := []unsafe.Pointer{
