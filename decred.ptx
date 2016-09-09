@@ -11,9 +11,16 @@
 .address_size 64
 
 	// .globl	decred_gpu_hash_nonce
+.extern .func  (.param .b32 func_retval0) vprintf
+(
+	.param .b64 vprintf_param_0,
+	.param .b64 vprintf_param_1
+)
+;
 .const .align 16 .b8 c_h[8];
 .const .align 16 .b8 c_data[128];
 .const .align 16 .b8 c_xors[860];
+.global .align 1 .b8 $str[4] = {104, 105, 10, 0};
 
 .visible .entry decred_gpu_hash_nonce(
 	.param .u32 decred_gpu_hash_nonce_param_0,
@@ -23,8 +30,8 @@
 )
 {
 	.reg .pred 	%p<3>;
-	.reg .b32 	%r<1961>;
-	.reg .b64 	%rd<6>;
+	.reg .b32 	%r<1962>;
+	.reg .b64 	%rd<9>;
 
 
 	ld.param.u32 	%r4, [decred_gpu_hash_nonce_param_0];
@@ -2854,18 +2861,40 @@
 	shr.b32 	%rhs, %r1955, 7;
 	add.u32 	%r1956, %lhs, %rhs;
 	}
-	ld.const.u32 	%r1957, [c_h+4];
-	xor.b32  	%r1958, %r1940, %r1957;
-	setp.ne.s32	%p2, %r1958, %r1956;
+	mov.u64 	%rd2, $str;
+	cvta.global.u64 	%rd3, %rd2;
+	mov.u64 	%rd4, 0;
+	// Callseq Start 0
+	{
+	.reg .b32 temp_param_reg;
+	// <end>}
+	.param .b64 param0;
+	st.param.b64	[param0+0], %rd3;
+	.param .b64 param1;
+	st.param.b64	[param1+0], %rd4;
+	.param .b32 retval0;
+	call.uni (retval0), 
+	vprintf, 
+	(
+	param0, 
+	param1
+	);
+	ld.param.b32	%r1957, [retval0+0];
+	
+	//{
+	}// Callseq End 0
+	ld.const.u32 	%r1958, [c_h+4];
+	xor.b32  	%r1959, %r1940, %r1958;
+	setp.ne.s32	%p2, %r1959, %r1956;
 	@%p2 bra 	BB0_3;
 
-	ld.param.u64 	%rd5, [decred_gpu_hash_nonce_param_2];
-	cvta.to.global.u64 	%rd2, %rd5;
-	atom.global.inc.u32 	%r1959, [%rd2], -1;
-	add.s32 	%r1960, %r1959, 1;
-	mul.wide.u32 	%rd3, %r1960, 4;
-	add.s64 	%rd4, %rd2, %rd3;
-	st.global.u32 	[%rd4], %r2;
+	ld.param.u64 	%rd8, [decred_gpu_hash_nonce_param_2];
+	cvta.to.global.u64 	%rd5, %rd8;
+	atom.global.inc.u32 	%r1960, [%rd5], -1;
+	add.s32 	%r1961, %r1960, 1;
+	mul.wide.u32 	%rd6, %r1961, 4;
+	add.s64 	%rd7, %rd5, %rd6;
+	st.global.u32 	[%rd7], %r2;
 
 BB0_3:
 	ret;

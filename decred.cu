@@ -197,6 +197,11 @@ extern "C" {
 __host__
 void decred_cpu_setBlock_52(const uint32_t *input)
 {
+	/*
+	for (int i = 0; i < 180/4; i++)
+		printf("%08x", input[i]);
+	printf("\n");
+	*/
 /*
 	Precompute everything possible and pass it on constant memory
 */

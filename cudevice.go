@@ -11,6 +11,7 @@ import "C"
 import (
 	"encoding/binary"
 	"fmt"
+	"reflect"
 	"runtime"
 	"time"
 	"unsafe"
@@ -129,9 +130,17 @@ func (d *Device) runCuDevice() error {
 	d.cuKernel = d.cuModule.GetFunction("decred_gpu_hash_nonce")
 
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
-	nonceResultsH := make([]uint32, d.cuInSize)
+	nonceResultsH := cu.MemAllocHost(d.cuInSize * 4)
 	nonceResultsD := cu.MemAlloc(d.cuInSize * 4)
+	defer cu.MemFreeHost(nonceResultsH)
 	defer nonceResultsD.Free()
+
+	nonceResultsHSliceHeader := reflect.SliceHeader{
+		Data: uintptr(nonceResultsH),
+		Len:  int(d.cuInSize),
+		Cap:  int(d.cuInSize),
+	}
+	nonceResultsHSlice := *(*[]uint32)(unsafe.Pointer(&nonceResultsHSliceHeader))
 
 	const N4 = 48
 	endianData := make([]byte, N4*4)
@@ -158,14 +167,14 @@ func (d *Device) runCuDevice() error {
 		}
 		d.lastBlock[work.TimestampWord] = util.Uint32EndiannessSwap(ts)
 
-		nonceResultsH[0] = 0
+		nonceResultsHSlice[0] = 0
 
-		cu.MemcpyHtoD(nonceResultsD, unsafe.Pointer(&nonceResultsH[0]), d.cuInSize * 4)
+		cu.MemcpyHtoD(nonceResultsD, nonceResultsH, d.cuInSize*4)
 
 		copy(endianData, d.work.Data[:128])
 		for i, j := 128, 0; i < 180; {
 			b := make([]byte, 4)
-			binary.LittleEndian.PutUint32(b, d.lastBlock[j])
+			binary.BigEndian.PutUint32(b, d.lastBlock[j])
 			copy(endianData[i:], b)
 			i += 4
 			j++
@@ -196,10 +205,10 @@ func (d *Device) runCuDevice() error {
 		}
 		cu.LaunchKernel(d.cuKernel, gridx, gridy, gridz, blockx, blocky, blockz, 0, 0, args)
 
-		cu.MemcpyDtoH(unsafe.Pointer(&nonceResultsH[0]), nonceResultsD, d.cuInSize * 4)
+		cu.MemcpyDtoH(nonceResultsH, nonceResultsD, d.cuInSize*4)
 
-		numResults := nonceResultsH[0]
-		for i, result := range nonceResultsH[1:1+numResults] {
+		numResults := nonceResultsHSlice[0]
+		for i, result := range nonceResultsHSlice[1 : 1+numResults] {
 			// lol seelog
 			i := i
 			result := result
