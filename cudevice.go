@@ -183,22 +183,27 @@ func (d *Device) runCuDevice() error {
 		currentTime := time.Now()
 
 		// TODO Which nonceword is this?  In ccminer it is &pdata[35]
-		nonce := d.lastBlock[work.Nonce1Word]
+		startNonce := d.lastBlock[work.Nonce1Word]
+		//fmt.Printf("%p %v\n", &startNonce, startNonce)
 
-		throughput := uint32(0x20000000)                    // TODO
-		throughput = minUint32(throughput, ^uint32(0)-nonce)
-		gridx := int((throughput + threadsPerBlock - 1) / threadsPerBlock)
+		throughput := uint32(0x20000000) // TODO
+		//throughput = minUint32(throughput, ^uint32(0)-nonce)
+		//gridx := int((throughput + threadsPerBlock - 1) / threadsPerBlock)
+		//gridx := (int(throughput) + 639) / 640
+		gridx := ((int(throughput) - 1) / 640)
 
-		targetHigh := uint32(0) // TODO
+		gridx = 52428 // don't ask me why this works.
+
+		targetHigh := uint32(0x1) // TODO
 
 		// Provide pointer args to kernel
 		args := []unsafe.Pointer{
 			unsafe.Pointer(&throughput),
-			unsafe.Pointer(&nonce),
+			unsafe.Pointer(&startNonce),
 			unsafe.Pointer(&nonceResultsD),
 			unsafe.Pointer(&targetHigh),
 		}
-		fmt.Println(gridx, blockx)
+		//fmt.Println(gridx, blockx)
 		cu.LaunchKernel(d.cuKernel, gridx, 1, 1, blockx, 1, 1, 0, 0, args)
 
 		cu.MemcpyDtoH(nonceResultsH, nonceResultsD, d.cuInSize*4)
