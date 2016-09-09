@@ -184,7 +184,7 @@ func (d *Device) runCuDevice() error {
 		// Execute the kernel and follow its execution time.
 		currentTime := time.Now()
 
-		throughput := uint32(536870912) // TODO
+		throughput := uint32(0x20000000) // TODO
 
 		//gridx := int((throughput + threadsPerBlock - 1) / threadsPerBlock) // TODO
 		// ccminer uses the above which gives 838861 on my test box but
