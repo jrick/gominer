@@ -198,18 +198,21 @@ func (d *Device) runCuDevice() error {
 
 		cu.MemcpyDtoH(unsafe.Pointer(&nonceResultsH[0]), nonceResultsD, d.cuInSize * 4)
 
-		for i := uint32(0); i < nonceResultsH[0]; i++ {
-			minrLog.Debugf("%x %v %v", nonceResultsH, i, nonceResultsH[0])
+		numResults := nonceResultsH[0]
+		for i, result := range nonceResultsH[1:1+numResults] {
+			// lol seelog
+			i := i
+			result := result
 			minrLog.Debugf("GPU #%d: Found candidate %v nonce %08x, "+
 				"extraNonce %08x, workID %08x, timestamp %08x",
-				d.index, i+1, nonceResultsH[i+1], d.lastBlock[work.Nonce1Word],
+				d.index, i, result, d.lastBlock[work.Nonce1Word],
 				util.Uint32EndiannessSwap(d.currentWorkID),
 				d.lastBlock[work.TimestampWord])
 
 			// Assess the work. If it's below target, it'll be rejected
 			// here. The mining algorithm currently sends this function any
 			// difficulty 1 shares.
-			d.foundCandidate(d.lastBlock[work.TimestampWord], nonceResultsH[i+1],
+			d.foundCandidate(d.lastBlock[work.TimestampWord], result,
 				d.lastBlock[work.Nonce1Word])
 		}
 
