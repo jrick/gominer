@@ -17,9 +17,6 @@ obj/decred.o: obj
 obj/cuda.a: obj/blake.o obj/decred.o
 	$(AR) rvs obj/cuda.a obj/blake.o obj/decred.o
 
-ptx:
-	$(NVCC) -I. -c decred.cu --ptx
-
 build: obj/cuda.a
 	go build
 
