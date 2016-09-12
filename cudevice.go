@@ -29,6 +29,13 @@ const (
 	blockx          = threadsPerBlock
 )
 
+func decredCPUSetBlock52(input *[192]byte) {
+	if input == nil {
+		panic("input is nil")
+	}
+	C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(input)))
+}
+
 func getCUInfo() ([]cu.Device, error) {
 	cu.Init(0)
 	ids := cu.DeviceGetCount()
@@ -148,8 +155,7 @@ func (d *Device) runCuDevice() error {
 	}
 	nonceResultsHSlice := *(*[]uint32)(unsafe.Pointer(&nonceResultsHSliceHeader))
 
-	const N4 = 48
-	endianData := make([]byte, N4*4)
+	endianData := new([192]byte)
 
 	for {
 		d.updateCurrentWork()
@@ -164,7 +170,7 @@ func (d *Device) runCuDevice() error {
 		util.RolloverExtraNonce(&d.extraNonce)
 		d.lastBlock[work.Nonce1Word] = util.Uint32EndiannessSwap(d.extraNonce)
 
-		copy(endianData, d.work.Data[:128])
+		copy(endianData[:], d.work.Data[:128])
 		for i, j := 128, 0; i < 180; {
 			b := make([]byte, 4)
 			binary.BigEndian.PutUint32(b, d.lastBlock[j])
@@ -172,7 +178,7 @@ func (d *Device) runCuDevice() error {
 			i += 4
 			j++
 		}
-		C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(&endianData[0])))
+		decredCPUSetBlock52(endianData)
 
 		// Update the timestamp. Only solo work allows you to roll
 		// the timestamp.
@@ -204,17 +210,8 @@ func (d *Device) runCuDevice() error {
 
 		targetHigh := ^uint32(0) // TODO
 
-		// Provide pointer args to kernel
-		args := []unsafe.Pointer{
-			unsafe.Pointer(&throughput),
-			unsafe.Pointer(&startNonce),
-			unsafe.Pointer(&nonceResultsD),
-			unsafe.Pointer(&targetHigh),
-		}
-		_ = args
 		C.decred_hash_nonce(C.uint32_t(gridx), C.uint32_t(blockx), C.uint32_t(throughput),
 			C.uint32_t(startNonce), (*C.uint32_t)(unsafe.Pointer(nonceResultsD)), C.uint32_t(targetHigh))
-		//cu.LaunchKernel(d.cuKernel, gridx, 1, 1, blockx, 1, 1, 0, 0, args)
 
 		cu.MemcpyDtoH(nonceResultsH, nonceResultsD, d.cuInSize*4)
 
