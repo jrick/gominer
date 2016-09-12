@@ -3,8 +3,9 @@
 package main
 
 /*
-#cgo LDFLAGS: -L/opt/cuda/lib64 -L/opt/cuda/lib -lcuda -lcudart obj/cuda.a
+#cgo LDFLAGS: -L/opt/cuda/lib64 -L/opt/cuda/lib -lcuda -lcudart -lstdc++ obj/cuda.a
 #include <stdint.h>
+void decred_hash_nonce(uint32_t grid, uint32_t block, uint32_t threads, uint32_t startNonce, uint32_t *resNonce, uint32_t targetHigh);
 void decred_cpu_setBlock_52(const uint32_t *input);
 */
 import "C"
@@ -197,7 +198,7 @@ func (d *Device) runCuDevice() error {
 		//throughput = minUint32(throughput, ^uint32(0)-nonce)
 		//gridx := int((throughput + threadsPerBlock - 1) / threadsPerBlock)
 		//gridx := (int(throughput) + 639) / 640
-		gridx := ((int(throughput) - 1) / 640)
+		gridx := ((throughput - 1) / 640)
 
 		gridx = 52428 // don't ask me why this works.
 
@@ -210,8 +211,10 @@ func (d *Device) runCuDevice() error {
 			unsafe.Pointer(&nonceResultsD),
 			unsafe.Pointer(&targetHigh),
 		}
-		//fmt.Println(gridx, blockx)
-		cu.LaunchKernel(d.cuKernel, gridx, 1, 1, blockx, 1, 1, 0, 0, args)
+		_ = args
+		C.decred_hash_nonce(C.uint32_t(gridx), C.uint32_t(blockx), C.uint32_t(throughput),
+			C.uint32_t(startNonce), (*C.uint32_t)(unsafe.Pointer(nonceResultsD)), C.uint32_t(targetHigh))
+		//cu.LaunchKernel(d.cuKernel, gridx, 1, 1, blockx, 1, 1, 0, 0, args)
 
 		cu.MemcpyDtoH(nonceResultsH, nonceResultsD, d.cuInSize*4)
 
