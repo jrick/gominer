@@ -83,8 +83,6 @@ type Device struct {
 	// Items for CUDA device
 	cuDeviceID cu.Device
 	cuContext  cu.Context
-	cuModule   cu.Module
-	cuKernel   cu.Function
 	//cuInput        cu.DevicePtr
 	cuInSize       int64
 	cuOutputBuffer []float64

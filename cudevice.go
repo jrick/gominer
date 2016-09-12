@@ -143,10 +143,6 @@ func (d *Device) runCuDevice() error {
 	// kernel is built with nvcc, not an api call so much bet done
 	// at compile time.
 
-	// Load the kernel and get function.
-	d.cuModule = cu.ModuleLoad(cfg.CuKernel)
-	d.cuKernel = d.cuModule.GetFunction("decred_gpu_hash_nonce")
-
 	minrLog.Infof("Started GPU #%d: %s", d.index, d.deviceName)
 	nonceResultsH := cu.MemAllocHost(d.cuInSize * 4)
 	nonceResultsD := cu.MemAlloc(d.cuInSize * 4)
