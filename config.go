@@ -23,7 +23,6 @@ const (
 	defaultLogDirname     = "logs"
 	defaultLogFilename    = "gominer.log"
 	defaultClKernel       = "blake256.cl"
-	defaultCuKernel       = "decred.ptx"
 )
 
 var (
@@ -242,7 +241,6 @@ func loadConfig() (*config, []string, error) {
 		Autocalibrate: defaultAutocalibrate,
 		Intensity:     defaultIntensity,
 		ClKernel:      defaultClKernel,
-		CuKernel:      defaultCuKernel,
 		WorkSize:      defaultWorkSize,
 	}
 
