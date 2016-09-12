@@ -36,6 +36,11 @@ func decredCPUSetBlock52(input *[192]byte) {
 	C.decred_cpu_setBlock_52((*C.uint32_t)(unsafe.Pointer(input)))
 }
 
+func decredHashNonce(gridx, blockx, threads uint32, startNonce uint32, nonceResults cu.DevicePtr, targetHigh uint32) {
+	C.decred_hash_nonce(C.uint32_t(gridx), C.uint32_t(blockx), C.uint32_t(threads),
+		C.uint32_t(startNonce), (*C.uint32_t)(unsafe.Pointer(nonceResults)), C.uint32_t(targetHigh))
+}
+
 func getCUInfo() ([]cu.Device, error) {
 	cu.Init(0)
 	ids := cu.DeviceGetCount()
@@ -210,8 +215,7 @@ func (d *Device) runCuDevice() error {
 
 		targetHigh := ^uint32(0) // TODO
 
-		C.decred_hash_nonce(C.uint32_t(gridx), C.uint32_t(blockx), C.uint32_t(throughput),
-			C.uint32_t(startNonce), (*C.uint32_t)(unsafe.Pointer(nonceResultsD)), C.uint32_t(targetHigh))
+		decredHashNonce(gridx, blockx, throughput, startNonce, nonceResultsD, targetHigh)
 
 		cu.MemcpyDtoH(nonceResultsH, nonceResultsD, d.cuInSize*4)
 
